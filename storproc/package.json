@@ -1,0 +1,32 @@
+{
+  "name": "@niftysave/storproc",
+  "version": "0.0.0",
+  "description": "Process that stores an asset on nft.storage.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "mocha *.spec.js",
+    "coverage": "c8 npm test && c8 report --reporter lcov --reporter html",
+    "lint": "standard"
+  },
+  "author": "Alan Shaw",
+  "license": "(Apache-2.0 AND MIT)",
+  "dependencies": {
+    "multiformats": "^6.0.0",
+    "nft.storage": "^0.4.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^2.2.1",
+    "@types/assert": "^1.5.4",
+    "@types/mocha": "^8.2.2",
+    "assert": "^2.0.0",
+    "c8": "^7.7.1",
+    "mocha": "^8.3.2",
+    "standard": "^16.0.3"
+  },
+  "standard": {
+    "ignore": [
+      "*.ts"
+    ]
+  }
+}
