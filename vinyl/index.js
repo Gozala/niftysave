@@ -1,10 +1,10 @@
 /* eslint-env worker */
-import { NFTStorage } from 'nft.storage'
-import { StorProc } from './StorProc.js'
+import { Vinyl } from './Vinyl.js'
 
+/** @type KVNamespace */
 // @ts-ignore
-const client = new NFTStorage({ token: self.NFT_STORAGE_TOKEN, endpoint: self.NFT_STORAGE_ENDPOINT })
-const sp = new StorProc({ client })
+const store = self.NFTS
+const vy = new Vinyl({ store })
 
 /**
  * @param {FetchEvent} event
@@ -13,16 +13,21 @@ const sp = new StorProc({ client })
 async function onFetch (event) {
   const url = new URL(event.request.url)
   let status = 200
-  /** @type import('./StorProc').StoreResult | { message: string } */
   let result
 
   try {
-    if (url.pathname !== '/api/store') {
+    if (url.pathname === '/api/register') {
+      // TODO: basic auth
+      const { info, metadata, assets } = await event.request.json()
+      await vy.register(info, metadata, assets)
+    } else if (url.pathname.startsWith('/api/asset/')) {
+      // TODO: basic auth
+      const cid = url.pathname.split('/')[3]
+      const info = await event.request.json()
+      await vy.updateAsset(cid, info)
+    } else {
       throw Object.assign(new Error('not found'), { status: 404 })
     }
-    // TODO: basic auth
-    const data = await event.request.json()
-    result = await sp.store(data.asset)
   } catch (err) {
     console.error(err)
     status = err.status || 500

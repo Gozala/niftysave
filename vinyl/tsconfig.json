@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "allowJs": true,
+    "checkJs": true,
+    "target": "esnext",
+    "lib": ["esnext", "webworker"],
+    "strict": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "@types/mocha"]
+  },
+  "include": [
+    ".",
+    "./types/*.d.ts",
+    "./node_modules/@cloudflare/workers-types/index.d.ts",
+    "./node_modules/@types/mocha/index.d.ts"
+  ],
+  "exclude": ["node_modules/"]
+}
