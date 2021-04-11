@@ -17,6 +17,7 @@
     "@types/mocha": "^8.2.2",
     "assert": "^2.0.0",
     "c8": "^7.7.1",
+    "cf-workers-memkv": "^1.0.2",
     "mocha": "^8.3.2",
     "standard": "^16.0.3"
   },

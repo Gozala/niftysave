@@ -8,7 +8,8 @@
  *  tokenURI: string
  * }} EthNFTInfo
  * @typedef {EthNFTInfo} NFTInfo
- * @typedef {{ pinStatus: import('./types/psa').Status, size: number }} AssetInfo
+ * @typedef {{ [cid: string]: AssetInfo }} AssetList
+ * @typedef {{ pinStatus: import('./types/psa').Status, size?: number }} AssetInfo
  */
 
 export class Vinyl {
@@ -26,7 +27,7 @@ export class Vinyl {
   /**
    * @param {NFTInfo} info Information about the NFT
    * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
-   * @param {{ [cid: string]: AssetInfo }} assets Assets referenced by the metadata.
+   * @param {AssetList} assets Assets referenced by the metadata.
    * @returns {Promise<void>}
    */
   async register (info, metadata, assets) {
