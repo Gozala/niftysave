@@ -31,7 +31,7 @@ export class VinylAPI {
    * @param {{ [cid: string]: import('./Vinyl').AssetInfo }} assets Assets referenced by the metadata.
    * @returns {Promise<void>}
    */
-  async register (info, metadata, assets) {
+  async record (info, metadata, assets) {
     const url = new URL('/api/register', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',

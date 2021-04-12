@@ -20,7 +20,7 @@ const r = new Router({
 
 r.add('options', '/api/*', cors)
 // TODO: basic auth
-r.add('post', '/api/register', handleRegister, [postCors])
+r.add('post', '/api/record', handleRecord, [postCors])
 r.add('post', '/api/asset/:cid', handleUpdateAsset, [postCors])
 
 addEventListener('fetch', r.listen.bind(r))
@@ -28,9 +28,9 @@ addEventListener('fetch', r.listen.bind(r))
 /**
  * @param {FetchEvent} event
  */
-async function handleRegister (event) {
+async function handleRecord (event) {
   const { info, metadata, assets } = await event.request.json()
-  await vy.register(info, metadata, assets)
+  await vy.record(info, metadata, assets)
   return new Response()
 }
 

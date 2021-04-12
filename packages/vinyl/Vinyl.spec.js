@@ -23,12 +23,12 @@ describe('Vinyl', () => {
 
   it('interface', () => {
     assert.strictEqual(typeof Vinyl, 'function')
-    assert.strictEqual(typeof vy.register, 'function')
+    assert.strictEqual(typeof vy.record, 'function')
     assert.strictEqual(typeof vy.updateAsset, 'function')
   })
 
-  it('register', async () => {
-    await vy.register(nfts[0].info, nfts[0].metadata, nfts[0].assets)
+  it('record', async () => {
+    await vy.record(nfts[0].info, nfts[0].metadata, nfts[0].assets)
 
     const rootKey = getRootKey(nfts[0].info)
 
@@ -49,52 +49,52 @@ describe('Vinyl', () => {
     }
   })
 
-  it('register asset exists', async () => {
+  it('record asset exists', async () => {
     const existingAssetInfo = { pinStatus: 'pinned', test: `data${Date.now()}` }
     const existingAssetCid = Object.keys(nfts[0].assets)[0]
     const assetKey = `asset:pinned:${existingAssetCid}`
     await store.put(assetKey, JSON.stringify(existingAssetInfo))
 
     // should not overwrite existing pinned asset
-    await vy.register(nfts[0].info, nfts[0].metadata, nfts[0].assets)
+    await vy.record(nfts[0].info, nfts[0].metadata, nfts[0].assets)
 
     const assetInfo = await store.get(assetKey, 'json')
     assert.deepStrictEqual(assetInfo, existingAssetInfo)
   })
 
-  it('register validation', async () => {
+  it('record validation', async () => {
     await assert.rejects(
       // @ts-ignore
-      vy.register({ chain: 'fil', contract: '0x', tokenID: '12345' }, nfts[0].metadata, nfts[0].assets),
+      vy.record({ chain: 'fil', contract: '0x', tokenID: '12345' }, nfts[0].metadata, nfts[0].assets),
       { message: 'unsupported chain: fil' }
     )
     await assert.rejects(
       // @ts-ignore
-      vy.register({ chain: 'eth', tokenID: '12345' }, nfts[0].metadata, nfts[0].assets),
+      vy.record({ chain: 'eth', tokenID: '12345' }, nfts[0].metadata, nfts[0].assets),
       { message: 'missing contract hash' }
     )
     await assert.rejects(
       // @ts-ignore
-      vy.register({ chain: 'eth', contract: '0x' }, nfts[0].metadata, nfts[0].assets),
+      vy.record({ chain: 'eth', contract: '0x' }, nfts[0].metadata, nfts[0].assets),
       { message: 'missing token ID' }
     )
     await assert.rejects(
-      vy.register(nfts[0].info, nfts[0].metadata, { 'not a cid': { pinStatus: 'pinned' } }),
+      vy.record(nfts[0].info, nfts[0].metadata, { 'not a cid': { pinStatus: 'pinned' } }),
       /invalid asset CID:/
     )
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
     await assert.rejects(
       // @ts-ignore
-      vy.register(nfts[0].info, nfts[0].metadata, { [cid]: null }),
+      vy.record(nfts[0].info, nfts[0].metadata, { [cid]: null }),
       { message: 'invalid asset info: null' }
     )
     await assert.rejects(
       // @ts-ignore
-      vy.register(nfts[0].info, nfts[0].metadata, { [cid]: { pinStatus: 'punned' } }),
+      vy.record(nfts[0].info, nfts[0].metadata, { [cid]: { pinStatus: 'punned' } }),
       { message: 'invalid pin status: punned' }
     )
     await assert.rejects(
-      vy.register(nfts[0].info, nfts[0].metadata, { [cid]: { pinStatus: 'pinned', size: -1 } }),
+      vy.record(nfts[0].info, nfts[0].metadata, { [cid]: { pinStatus: 'pinned', size: -1 } }),
       { message: 'invalid size: -1' }
     )
   })

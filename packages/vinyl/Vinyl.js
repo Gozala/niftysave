@@ -33,7 +33,7 @@ export class Vinyl {
    * @param {AssetList} assets Assets referenced by the metadata.
    * @returns {Promise<void>}
    */
-  async register (info, metadata, assets) {
+  async record (info, metadata, assets) {
     if (info.chain !== 'eth') throw new Error(`unsupported chain: ${info.chain}`)
     if (!info.contract) throw new Error('missing contract hash')
     if (!info.tokenID) throw new Error('missing token ID')
