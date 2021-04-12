@@ -43,4 +43,21 @@ export class VinylAPI {
     }
     return res.json()
   }
+
+  /**
+   * @param {string} cid
+   * @param {import('./Vinyl').AssetInfo} info
+   */
+  async updateAsset (cid, info) {
+    const url = new URL(`/api/asset/${encodeURIComponent(cid)}`, this.endpoint)
+    const res = await fetch(url.toString(), {
+      method: 'POST',
+      body: JSON.stringify({ info })
+    })
+    if (!res.ok) {
+      const text = await res.text()
+      throw new Error(`${res.status} status updating asset ${cid} response: ${text}`)
+    }
+    return res.json()
+  }
 }
