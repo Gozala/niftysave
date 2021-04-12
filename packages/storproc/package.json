@@ -1,6 +1,6 @@
 {
   "name": "@niftysave/storproc",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Process that stores an asset on nft.storage.",
   "main": "index.js",
   "type": "module",
@@ -12,7 +12,7 @@
   "author": "Alan Shaw",
   "license": "(Apache-2.0 AND MIT)",
   "dependencies": {
-    "@niftysave/router": "^0.0.2",
+    "@niftysave/router": "^0.0.3",
     "multiformats": "^6.0.0",
     "nft.storage": "^0.4.1"
   },

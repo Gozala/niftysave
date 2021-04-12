@@ -1,6 +1,6 @@
 {
   "name": "@niftysave/vinyl",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Process that records NFT existence and asset pinning status.",
   "main": "index.js",
   "type": "module",
@@ -27,7 +27,7 @@
     ]
   },
   "dependencies": {
-    "@niftysave/router": "^0.0.2",
+    "@niftysave/router": "^0.0.3",
     "multiformats": "^4.6.3"
   },
   "repository": {
