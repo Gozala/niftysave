@@ -12,7 +12,7 @@ Assets which have not become pinned within 4 hours are marked as failed and neve
 
 Accepts an `application/json` body like:
 
-```json
+```js
 {
   "cid": "bafy...",
   "pinStatus": "queued | pinning | failed" // Note: NOT "pinned"

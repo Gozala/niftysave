@@ -10,7 +10,7 @@ Record a found NFT.
 
 Accepts an `application/json` body like:
 
-```json
+```js
 {
   "info" : {
     /* on-chain information about the NFT */
