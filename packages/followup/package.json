@@ -29,7 +29,7 @@
   "dependencies": {
     "@niftysave/router": "^0.0.3",
     "@niftysave/vinyl": "^0.0.3",
-    "multiformats": "^4.6.3",
+    "multiformats": "^6.0.1",
     "nft.storage": "^0.4.1"
   },
   "repository": {

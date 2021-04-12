@@ -1,5 +1,5 @@
 /* eslint-env worker */
-import CID from 'multiformats/cid'
+import { CID } from 'multiformats/cid'
 
 /**
  * @typedef {{

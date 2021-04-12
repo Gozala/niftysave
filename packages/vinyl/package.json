@@ -28,7 +28,7 @@
   },
   "dependencies": {
     "@niftysave/router": "^0.0.3",
-    "multiformats": "^4.6.3"
+    "multiformats": "^6.0.1"
   },
   "repository": {
     "type": "git",

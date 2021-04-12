@@ -1,5 +1,5 @@
 /* eslint-env worker */
-import CID from 'multiformats/cid'
+import { CID } from 'multiformats/cid'
 
 const HOUR = 1000 * 60 * 60
 const MAX_AGE = 4 * HOUR

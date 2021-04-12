@@ -1,6 +1,7 @@
 # @niftysave/followup
 
 [![CI](https://github.com/nftstorage/niftysave/actions/workflows/main.yml/badge.svg)](https://github.com/nftstorage/niftysave/actions/workflows/main.yml)
+[![dependencies Status](https://status.david-dm.org/gh/nftstorage/niftysave.svg?path=packages%2Ffollowup)](https://david-dm.org/nftstorage/niftysave?path=packages/followup)
 
 ## API
 
