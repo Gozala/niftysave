@@ -29,5 +29,18 @@
     "ignore": [
       "*.ts"
     ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nftstorage/niftysave.git"
+  },
+  "keywords": [
+    "niftysave"
+  ],
+  "bugs": {
+    "url": "https://github.com/nftstorage/niftysave/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

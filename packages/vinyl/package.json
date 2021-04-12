@@ -40,5 +40,8 @@
   "bugs": {
     "url": "https://github.com/nftstorage/niftysave/issues"
   },
-  "homepage": "https://github.com/nftstorage/niftysave#readme"
+  "homepage": "https://github.com/nftstorage/niftysave#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
