@@ -27,6 +27,7 @@
     ]
   },
   "dependencies": {
-    "@ipld/dag-cbor": "^4.0.0"
+    "@ipld/dag-cbor": "^4.0.0",
+    "multiformats": "^4.6.3"
   }
 }

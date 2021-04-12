@@ -1,4 +1,5 @@
 /* eslint-env worker */
+import CID from 'multiformats/cid'
 
 /**
  * @typedef {{
@@ -11,6 +12,8 @@
  * @typedef {{ [cid: string]: AssetInfo }} AssetList
  * @typedef {{ pinStatus: import('./types/psa').Status, size?: number }} AssetInfo
  */
+
+const PIN_STATUSES = Object.freeze(['queued', 'pinning', 'pinned', 'failed'])
 
 export class Vinyl {
   /**
@@ -31,7 +34,17 @@ export class Vinyl {
    * @returns {Promise<void>}
    */
   async register (info, metadata, assets) {
+    if (info.chain !== 'eth') throw new Error(`unsupported chain: ${info.chain}`)
+    if (!info.contract) throw new Error('missing contract hash')
+    if (!info.tokenID) throw new Error('missing token ID')
+
+    Object.entries(assets).forEach(([cid, info]) => {
+      validateAssetCID(cid)
+      validateAssetInfo(info)
+    })
+
     const rootKey = getRootKey(info)
+
     await Promise.all([
       this.store.put(`info:${rootKey}`, JSON.stringify(info)),
       this.store.put(`metadata:${rootKey}`, JSON.stringify(metadata)),
@@ -49,6 +62,9 @@ export class Vinyl {
    * @param {AssetInfo} info
    */
   async updateAsset (cid, info) {
+    validateAssetCID(cid)
+    validateAssetInfo(info)
+
     const existingData = (await Promise.all([
       this.store.get(`asset:pinned:${cid}`),
       this.store.get(`asset:pinning:${cid}`),
@@ -72,9 +88,30 @@ export class Vinyl {
  * @param {NFTInfo} info
  * @returns {string}
  */
-function getRootKey (info) {
-  if (info.chain !== 'eth') throw new Error(`unsupported chain: ${info.chain}`)
-  if (!info.contract) throw new Error('missing contract hash')
-  if (!info.tokenID) throw new Error('missing token ID')
-  return [info.chain, info.contract, info.tokenID].join(':')
+const getRootKey = info => [info.chain, info.contract, info.tokenID].join(':')
+
+/**
+ * @param {string} cid
+ */
+function validateAssetCID (cid) {
+  try {
+    CID.parse(cid)
+  } catch (err) {
+    throw new Error(`invalid asset CID: ${cid}: ${err.message}`)
+  }
+}
+
+/**
+ * @param {AssetInfo} info
+ */
+function validateAssetInfo (info) {
+  if (info == null || typeof info !== 'object') {
+    throw new Error(`invalid asset info: ${info}`)
+  }
+  if (!PIN_STATUSES.includes(info.pinStatus)) {
+    throw new Error(`invalid pin status: ${info.pinStatus}`)
+  }
+  if (info.size != null && (typeof info.size !== 'number' || info.size <= 0)) {
+    throw new Error(`invalid size: ${info.size}`)
+  }
 }
