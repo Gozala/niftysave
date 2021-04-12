@@ -1,43 +1,45 @@
 /* eslint-env worker */
+import { Router, cors, postCors } from '@niftysave/router'
 import { Vinyl } from './Vinyl.js'
 
 /** @type KVNamespace */
 // @ts-ignore
 const store = self.NFTS
 const vy = new Vinyl({ store })
+const r = new Router({
+  onError: (_, err) => new Response(JSON.stringify({ message: err.message }), {
+    // @ts-ignore
+    status: err.status || 500,
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+  }),
+  onNotFound: () => new Response(JSON.stringify({ message: 'not found' }), {
+    status: 404,
+    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
+  })
+})
+
+r.add('options', '/api/*', cors)
+// TODO: basic auth
+r.add('post', '/api/register', handleRegister, [postCors])
+r.add('post', '/api/asset/:cid', handleUpdateAsset, [postCors])
+
+addEventListener('fetch', r.listen.bind(r))
 
 /**
  * @param {FetchEvent} event
- * @returns {Promise<Response>}
  */
-async function onFetch (event) {
-  const url = new URL(event.request.url)
-  let status = 200
-  let result
-
-  try {
-    if (url.pathname === '/api/register') {
-      // TODO: basic auth
-      const { info, metadata, assets } = await event.request.json()
-      await vy.register(info, metadata, assets)
-    } else if (url.pathname.startsWith('/api/asset/')) {
-      // TODO: basic auth
-      const cid = url.pathname.split('/')[3]
-      const info = await event.request.json()
-      await vy.updateAsset(cid, info)
-    } else {
-      throw Object.assign(new Error('not found'), { status: 404 })
-    }
-  } catch (err) {
-    console.error(err)
-    status = err.status || 500
-    result = { message: err.message }
-  }
-
-  return new Response(JSON.stringify(result), {
-    status,
-    headers: { 'Content-Type': 'application/json;charset=UTF-8' }
-  })
+async function handleRegister (event) {
+  const { info, metadata, assets } = await event.request.json()
+  await vy.register(info, metadata, assets)
+  return new Response()
 }
 
-addEventListener('fetch', event => event.respondWith(onFetch(event)))
+/**
+ * @param {FetchEvent} event
+ * @param {Record<string, string>} params
+ */
+async function handleUpdateAsset (event, params) {
+  const info = await event.request.json()
+  await vy.updateAsset(params.cid, info)
+  return new Response()
+}

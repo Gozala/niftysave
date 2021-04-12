@@ -1,4 +1,5 @@
 import regexparam from 'regexparam'
+export * from './cors.js'
 
 /**
  * @typedef {(event: FetchEvent, params: Record<string,string>) => Promise<Response> | Response} Handler

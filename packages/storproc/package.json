@@ -12,6 +12,7 @@
   "author": "Alan Shaw",
   "license": "(Apache-2.0 AND MIT)",
   "dependencies": {
+    "@niftysave/router": "^0.0.0",
     "multiformats": "^6.0.0",
     "nft.storage": "^0.4.1"
   },
