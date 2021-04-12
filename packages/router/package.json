@@ -1,0 +1,27 @@
+{
+  "name": "@niftysave/router",
+  "version": "0.0.0",
+  "description": "A simple router for Cloudflare workers.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nftstorage/niftysave.git"
+  },
+  "keywords": [
+    "router",
+    "cloudflare"
+  ],
+  "author": "Hugo Dias",
+  "license": "(Apache-2.0 AND MIT)",
+  "bugs": {
+    "url": "https://github.com/nftstorage/niftysave/issues"
+  },
+  "homepage": "https://github.com/nftstorage/niftysave#readme",
+  "dependencies": {
+    "regexparam": "^1.3.0"
+  }
+}
