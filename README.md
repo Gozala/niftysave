@@ -43,7 +43,7 @@ Saving the NFTs by storing them on [nft.storage](https://nft.storage).
     * Periodic recounts of metrics, totals cached in KV store.
     * Exposes prometheus metrics endpoint.
 
-Docs and code for each component:
+## Components
 
 * [StorProc](https://github.com/nftstorage/niftysave/tree/main/packages/storproc)
 * [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl)
