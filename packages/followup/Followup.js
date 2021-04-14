@@ -1,11 +1,21 @@
 /* eslint-env worker */
 import { CID } from 'multiformats/cid'
 
-const HOUR = 1000 * 60 * 60
-const MAX_AGE = 4 * HOUR
+const MINUTE = 1000 * 60
+const HOUR = MINUTE * 60
+const DAY = HOUR * 24
+
+export const MAX_AGE = DAY * 7 // if we can't pin it in 7 days it is probably lost forever
+export const BACKOFF = MINUTE // time between checks, multiplied by the number of checks
 
 /**
- * @typedef {{ pinStatus: 'queued'|'pinning'|'failed', registeredAt: Date }} FollowupMeta
+ * @typedef {{
+ *  cid: string,
+ *  pinStatus: 'queued'|'pinning'|'failed',
+ *  checks: number,
+ *  updated: Date,
+ *  created: Date
+ * }} Asset
  */
 
 export class Followup {
@@ -43,71 +53,132 @@ export class Followup {
    */
   async register (cid, pinStatus) {
     validateAssetCID(cid)
-
-    // asset must not yet be pinned already
-    if (!['queued', 'pinning', 'failed'].includes(pinStatus)) {
-      throw new Error(`invalid pin status: ${pinStatus}`)
-    }
+    validatePinStatus(pinStatus)
 
     const exists = await this.store.get(cid)
     if (exists != null) return // already following up
 
-    /** @type {FollowupMeta} */
-    const metadata = { pinStatus, registeredAt: new Date() }
-    await this.store.put(cid, '', { metadata })
+    const now = new Date()
+    /** @type {Asset} */
+    const info = { cid, pinStatus, checks: 0, updated: now, created: now }
+    await this.store.put(cid, '', { metadata: info })
   }
 
-  async followup () {
-    const list = await this.store.list({ limit: 10 })
-    for (const key of list.keys) {
-      const cid = key.name
-      if (key.metadata == null) {
-        console.warn('missing metadata', cid)
-        continue
+  /**
+   * Follow-up on the next n assets.
+   * @param {number} limit
+   */
+  async followup (limit = 10) {
+    const assets = await this.getNextAssets(limit)
+    /** @type {Error[]} */
+    const errors = []
+    for (const asset of assets) {
+      try {
+        await this.followupAsset(asset)
+      } catch (err) {
+        err.message = `follow-up on ${asset.cid}: ${err.message}`
+        errors.push(err)
       }
+    }
+    if (errors.length) {
+      // eslint-disable-next-line no-undef
+      throw new AggregateError(errors, 'follow-up failures')
+    }
+  }
 
-      /** @type {FollowupMeta} */
+  /**
+   * Fetch the next n assets to follow up on.
+   * @private
+   * @param {number} limit
+   * @returns {Promise<Asset[]>}
+   */
+  async getNextAssets (limit) {
+    /** @type {Asset[]} */
+    const assets = []
+    let cursor
+    const now = Date.now()
+    while (true) {
       // @ts-ignore
-      const metadata = { ...key.metadata, registeredAt: new Date(key.metadata.registeredAt) }
-
-      let assetPinStatus, assetSize
-      try {
-        const status = await this.client.status(cid)
-        assetPinStatus = status.pin.status
-        assetSize = status.size
-      } catch (err) {
-        console.error('fetching status', cid, err)
-        if (Date.now() - metadata.registeredAt.getTime() > this.maxAge) {
-          await this.vinyl.updateAsset(cid, { pinStatus: 'failed', size: assetSize })
-          await this.store.delete(cid)
+      const list = await this.store.list({ limit: 1000, cursor })
+      for (const key of list.keys) {
+        const asset = {
+          cid: key.name,
+          pinStatus: key.metadata.pinStatus,
+          checks: key.metadata.checks,
+          updated: new Date(key.metadata.updated),
+          created: new Date(key.metadata.created)
         }
-        continue
+        if (now - asset.updated.getTime() > (asset.checks * BACKOFF)) {
+          assets.push(asset)
+        }
+        if (assets.length >= limit) {
+          break
+        }
       }
+      if (assets.length >= limit || list.list_complete) {
+        break
+      }
+      cursor = list.cursor
+    }
+    return assets
+  }
 
-      try {
-        switch (assetPinStatus) {
-          case 'pinned':
-          case 'failed':
-            await this.vinyl.updateAsset(cid, { pinStatus: assetPinStatus, size: assetSize })
-            // TODO: retry on fail?
-            await this.store.delete(cid)
+  /**
+   * @private
+   * @param {Asset} asset
+   * @returns {boolean}
+   */
+  isExpired (asset) {
+    return Date.now() - asset.created.getTime() > this.maxAge
+  }
+
+  /**
+   * @private
+   * @param {Asset} asset
+   */
+  async followupAsset (asset) {
+    let pinStatus, size
+    try {
+      const status = await this.client.status(asset.cid)
+      pinStatus = status.pin.status
+      size = status.size
+    } catch (err) {
+      if (this.isExpired(asset)) {
+        await this.vinyl.updateAsset(asset.cid, { pinStatus: 'failed', size: size || 0 })
+        await this.store.delete(asset.cid)
+      } else {
+        await this.store.put(asset.cid, '', {
+          metadata: { ...asset, checks: asset.checks + 1, updated: new Date() }
+        })
+      }
+      err.message = `fetching status: ${err.message}`
+      throw err
+    }
+
+    try {
+      switch (pinStatus) {
+        case 'pinned':
+        case 'failed':
+          await this.vinyl.updateAsset(asset.cid, { pinStatus, size })
+          // TODO: retry on fail?
+          await this.store.delete(asset.cid)
+          break
+        default:
+          if (this.isExpired(asset)) {
+            await this.vinyl.updateAsset(asset.cid, { pinStatus: 'failed', size })
+            await this.store.delete(asset.cid)
             break
-          default:
-            // too old, remove
-            if (Date.now() - metadata.registeredAt.getTime() > this.maxAge) {
-              await this.vinyl.updateAsset(cid, { pinStatus: 'failed', size: assetSize })
-              await this.store.delete(cid)
-            } else {
-              if (assetPinStatus !== metadata.pinStatus) {
-                await this.vinyl.updateAsset(cid, { pinStatus: assetPinStatus, size: assetSize })
-              }
-              await this.store.put(cid, '', { metadata: { ...metadata, pinStatus: assetPinStatus } })
-            }
-        }
-      } catch (err) {
-        console.error('updating asset info', cid, assetPinStatus, assetSize)
-        continue
+          }
+          if (pinStatus !== asset.pinStatus) {
+            await this.vinyl.updateAsset(asset.cid, { pinStatus, size })
+          }
+          await this.store.put(asset.cid, '', {
+            metadata: { ...asset, checks: asset.checks + 1, updated: new Date(), pinStatus }
+          })
       }
+    } catch (err) {
+      err.message = `updating pin status: ${pinStatus} size: ${size} info: ${err.message}`
+      throw err
     }
   }
 }
@@ -120,5 +191,15 @@ function validateAssetCID (cid) {
     CID.parse(cid)
   } catch (err) {
     throw new Error(`invalid asset CID: ${cid}: ${err.message}`)
+  }
+}
+
+/**
+ * @param {string} status
+ */
+function validatePinStatus (status) {
+  // asset must not yet be pinned already
+  if (!['queued', 'pinning', 'failed'].includes(status)) {
+    throw new Error(`invalid pin status: ${status}`)
   }
 }

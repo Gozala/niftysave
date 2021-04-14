@@ -9,7 +9,7 @@
 
 Register an NFT asset for follow-up. This means periodically checking on its pinning status to see if it has completed pinning. Each status change is recorded to [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl).
 
-Assets which have not become pinned within 4 hours are marked as failed and never checked again.
+Assets which have not become pinned within 24 hours are marked as failed and never checked again.
 
 Accepts an `application/json` body like:
 
