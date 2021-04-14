@@ -1,6 +1,6 @@
 {
   "name": "@niftysave/followup",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Cron process that follows up on assets that are being pinned to get them pinned.",
   "main": "index.js",
   "type": "module",
@@ -27,8 +27,8 @@
     ]
   },
   "dependencies": {
-    "@niftysave/router": "^0.0.3",
-    "@niftysave/vinyl": "^0.0.3",
+    "@niftysave/router": "^0.1.0",
+    "@niftysave/vinyl": "^0.1.0",
     "multiformats": "^6.0.1",
     "nft.storage": "^0.4.1"
   },
