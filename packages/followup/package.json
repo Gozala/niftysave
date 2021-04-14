@@ -1,6 +1,6 @@
 {
   "name": "@niftysave/followup",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Cron process that follows up on assets that are being pinned to get them pinned.",
   "main": "index.js",
   "type": "module",
