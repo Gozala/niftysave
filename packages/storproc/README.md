@@ -3,6 +3,8 @@
 [![CI](https://github.com/nftstorage/niftysave/actions/workflows/main.yml/badge.svg)](https://github.com/nftstorage/niftysave/actions/workflows/main.yml)
 [![dependencies Status](https://status.david-dm.org/gh/nftstorage/niftysave.svg?path=packages%2Fstorproc)](https://david-dm.org/nftstorage/niftysave?path=packages/storproc)
 
+Process that stores an asset on nft.storage.
+
 ## API
 
 ### `POST /api/store`

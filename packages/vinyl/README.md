@@ -3,6 +3,8 @@
 [![CI](https://github.com/nftstorage/niftysave/actions/workflows/main.yml/badge.svg)](https://github.com/nftstorage/niftysave/actions/workflows/main.yml)
 [![dependencies Status](https://status.david-dm.org/gh/nftstorage/niftysave.svg?path=packages%2Fvinyl)](https://david-dm.org/nftstorage/niftysave?path=packages/vinyl)
 
+Process that records NFT existence and asset pinning status.
+
 ## API
 
 ### `POST /api/record`
