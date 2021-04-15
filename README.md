@@ -9,10 +9,21 @@ Saving the NFTs by storing them on [nft.storage](https://nft.storage).
 * ChaiNFT λ
     * Inspects a chain between 2 epochs, finds NFTs and returns info about them.
     * Chain type (ETH), offset & limit (max 100)
+* Orch ⏰λ
+    * Manages scraping and storing.
+    * Calls ChaiNFT from last epoch to current epoch.
+        * Limit 100 epochs per "page"
+        * For each NFT...
+            * Calls StorProc.
 * StorProc λ
-    * Accepts a link to something storable, like a URL, a CID, whatever, and attempts to store it on nft.storage.
-    * This will likely be using the pinning service API so success may not be instant.
-    * Returns CID and pin status.
+    * Accepts NFT on-chain info and the NFT's metadata.json.
+    * Calls Vinyl to record NFT existence.
+    * Extracts storable links.
+        * For each link.
+            * If URL then download data.
+            * Calls nft.storage `/upload` or `/pin` depending on link type.
+            * Calls Vinyl to update pin status for asset.
+        * Calls Followup, passing CIDs of assets not already pinned.
 * Vinyl λ
     * Records information and pin status for assets of an NFT.
     * Create logs existence and expected followup calls.
@@ -28,17 +39,6 @@ Saving the NFTs by storing them on [nft.storage](https://nft.storage).
             * If failed, resubmit.
             * Update last check time and resubmit count.
             * If too old or too resubmitted then call Vinyl to log perma-fail.
-* Orch ⏰λ
-    * Manages scraping and initial storing.
-    * Call ChaiNFT from last epoch to current epoch.
-        * Limit 100 epochs per "page"
-        * For each NFT...
-            * Call Vinyl to log existence.
-            * Extract storable links.
-            * For each link.
-                * Call StorProc.
-                * Call Vinyl to update pin status for asset.
-                * Call Followup iff asset is not already pinned.
 * Promulgate λ + ⏰λ
     * Periodic recounts of metrics, totals cached in KV store.
     * Exposes prometheus metrics endpoint.
