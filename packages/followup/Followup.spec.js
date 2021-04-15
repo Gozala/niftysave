@@ -67,20 +67,20 @@ describe('Followup', () => {
 
   it('register validation', async () => {
     await assert.rejects(
-      fup.register('bad cid', 'queued'),
+      fup.register([{ cid: 'bad cid', pinStatus: 'queued' }]),
       /invalid asset CID:/
     )
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
     await assert.rejects(
       // @ts-ignore
-      fup.register(cid, 'pinned'),
+      fup.register([{ cid, pinStatus: 'pinned' }]),
       { message: 'invalid pin status: pinned' }
     )
   })
 
   it('register', async () => {
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
-    await fup.register(cid, 'pinning')
+    await fup.register([{ cid, pinStatus: 'pinning' }])
     const result = await store.getWithMetadata(cid)
     const asset = metaToAsset(result.metadata)
     assert.strictEqual(asset.pinStatus, 'pinning')
@@ -92,7 +92,7 @@ describe('Followup', () => {
   it('register asset exists', async () => {
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
     await store.put(cid, '', { metadata: { pinStatus: 'pinning' } })
-    await fup.register(cid, 'queued')
+    await fup.register([{ cid, pinStatus: 'queued' }])
     const result = await store.getWithMetadata(cid)
     const asset = metaToAsset(result.metadata)
     assert.strictEqual(asset.pinStatus, 'pinning')

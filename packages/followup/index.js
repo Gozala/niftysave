@@ -34,8 +34,9 @@ addEventListener('fetch', r.listen.bind(r))
  * @param {FetchEvent} event
  */
 async function handleRegister (event) {
-  const { cid, pinStatus } = await event.request.json()
-  await fup.register(cid, pinStatus)
+  /** @type {import('./Followup.js').AssetReg[]} */
+  const assets = await event.request.json()
+  await fup.register(assets)
   return new Response()
 }
 

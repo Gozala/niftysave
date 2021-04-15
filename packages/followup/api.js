@@ -26,19 +26,18 @@ export class FollowupAPI {
   }
 
   /**
-   * @param {string} cid
-   * @param {'queued'|'pinning'|'failed'} pinStatus
+   * @param {import('./Followup').AssetReg[]} assets
    * @returns {Promise<void>}
    */
-  async register (cid, pinStatus) {
+  async register (assets) {
     const url = new URL('/api/register', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({ cid, pinStatus })
+      body: JSON.stringify(assets)
     })
     if (!res.ok) {
       const text = await res.text()
-      throw new Error(`${res.status} status registering follow-up: ${cid} response: ${text}`)
+      throw new Error(`${res.status} status registering follow-up(s): ${text}`)
     }
     return res.json()
   }

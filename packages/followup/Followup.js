@@ -9,13 +9,9 @@ export const MAX_AGE = DAY * 7 // if we can't pin it in 7 days it is probably lo
 export const BACKOFF = MINUTE // time between checks, multiplied by the number of checks
 
 /**
- * @typedef {{
- *  cid: string,
- *  pinStatus: 'queued'|'pinning'|'failed',
- *  checks: number,
- *  updated: Date,
- *  created: Date
- * }} Asset
+ * @typedef {'queued'|'pinning'|'failed'} Status
+ * @typedef {{ cid: string, pinStatus: Status }} AssetReg
+ * @typedef {{ cid: string, pinStatus: Status, checks: number, updated: Date, created: Date }} Asset
  */
 
 export class Followup {
@@ -47,21 +43,23 @@ export class Followup {
   }
 
   /**
-   * @param {string} cid
-   * @param {'queued'|'pinning'|'failed'} pinStatus
+   * @param {Iterable<AssetReg>} assets
    * @returns {Promise<void>}
    */
-  async register (cid, pinStatus) {
-    validateAssetCID(cid)
-    validatePinStatus(pinStatus)
+  async register (assets) {
+    for (const reg of assets) {
+      validateAssetCID(reg.cid)
+      validatePinStatus(reg.pinStatus)
+    }
+    for (const reg of assets) {
+      const exists = await this.store.get(reg.cid)
+      if (exists != null) return // already following up
 
-    const exists = await this.store.get(cid)
-    if (exists != null) return // already following up
-
-    const now = new Date()
-    /** @type {Asset} */
-    const info = { cid, pinStatus, checks: 0, updated: now, created: now }
-    await this.store.put(cid, '', { metadata: info })
+      const now = new Date()
+      /** @type {Asset} */
+      const info = { cid: reg.cid, pinStatus: reg.pinStatus, checks: 0, updated: now, created: now }
+      await this.store.put(reg.cid, '', { metadata: info })
+    }
   }
 
   /**
