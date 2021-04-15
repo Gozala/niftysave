@@ -1,8 +1,9 @@
 export type NFTInfo = import('./Vinyl').NFTInfo
-export type AssetInfo = import('./Vinyl').AssetInfo
+export type Link = import('./Vinyl').Link
+export type Pin = import('./Vinyl').Pin
 
 export class VinylAPI {
   constructor (config: { endpoint: URL, username: string, password: string })
-  record (info: NFTInfo, metadata: any, assets: Record<string, AssetInfo>): Promise<void>
-  updateAsset (cid: string, info: AssetInfo): Promise<void>
+  addNFT (info: NFTInfo, metadata: any, links: Link[]): Promise<void>
+  updatePin (pin: Pin): Promise<void>
 }

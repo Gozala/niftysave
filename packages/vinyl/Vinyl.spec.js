@@ -8,7 +8,7 @@ import { nfts } from './fixtures.js'
  * @param {import('./Vinyl.js').NFTInfo} info
  * @returns {string}
  */
-const getRootKey = info => [info.chain, info.contract, info.tokenID].join(':')
+const getRootKey = info => [info.chain, info.contract, info.tokenID].join('/')
 
 describe('Vinyl', () => {
   /** @type KVNamespace */
@@ -42,7 +42,7 @@ describe('Vinyl', () => {
     assert.deepStrictEqual(assets, Object.keys(nfts[0].assets))
 
     for (const [cid, info] of Object.entries(nfts[0].assets)) {
-      /** @type {{ value: import('./Vinyl.js').AssetInfo | null, metadata: { size: number } | null }} */
+      /** @type {{ value: import('./Vinyl.js').Asset | null, metadata: { size: number } | null }} */
       const asset = await store.getWithMetadata(`asset:${info.pinStatus}:${cid}`, 'json')
       assert.deepStrictEqual(asset.value, info)
       assert.deepStrictEqual(asset.metadata, { size: info.size })
@@ -119,7 +119,7 @@ describe('Vinyl', () => {
 
   it('updateAsset same status', async () => {
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
-    /** @type import('./Vinyl.js').AssetInfo */
+    /** @type import('./Vinyl.js').Asset */
     const info = { pinStatus: 'pinned' }
     const key = `asset:pinned:${cid}`
     await store.put(key, JSON.stringify(info))

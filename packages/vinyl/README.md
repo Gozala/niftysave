@@ -7,7 +7,7 @@ Process that records NFT existence and asset pinning status.
 
 ## API
 
-### `POST /api/record`
+### `POST /api/nft`
 
 Record a found NFT.
 
@@ -25,16 +25,17 @@ Accepts an `application/json` body like:
   "metadata": {
     /* arbitrary metadata content for the NFT, might be in ERC-115 or ERC-721 if lucky */
   },
-  "assets": {
-    /* assets extracted from the NFT metadata, including the metadata itself */
-    "bafk...": { "pinStatus": "pinning" }
-  }
+  "links": [
+    /* links extracted from the NFT metadata, including the metadata itself */
+    { name: "metadata.json", cid: "bafk..." },
+    { name: "ipfs://bafk.../nft.jpg", cid: "bafy..." }
+  ]
 }
 ```
 
 No response data is returned.
 
-### `POST /api/asset/:cid`
+### `POST /api/pin/:cid`
 
 Update pinning status for an NFT asset.
 
@@ -42,7 +43,7 @@ Accepts an `application/json` body like:
 
 ```json
 {
-  "pinStatus": "queued | pinning | pinned | failed",
+  "status": "queued | pinning | pinned | failed",
   "size": 1138
 }
 ```

@@ -9,8 +9,15 @@ import { CID } from 'multiformats/cid'
  *  tokenURI: string
  * }} EthNFTInfo
  * @typedef {EthNFTInfo} NFTInfo
- * @typedef {{ [cid: string]: AssetInfo }} AssetList
- * @typedef {{ pinStatus: import('./types/psa').Status, size?: number }} AssetInfo
+ * @typedef {{
+ *  cid: string,
+ *  status: import('./types/psa').Status,
+ *  size?: number
+ * }} Pin
+ * @typedef {{
+ *  name: string,
+ *  cid?: string
+ * }} Link
  */
 
 const PIN_STATUSES = Object.freeze(['queued', 'pinning', 'pinned', 'failed'])
@@ -18,68 +25,40 @@ const PIN_STATUSES = Object.freeze(['queued', 'pinning', 'pinned', 'failed'])
 export class Vinyl {
   /**
    * TODO: save to a PostgreSQL
-   * @param {{ store: KVNamespace }} config
+   * @param {{ nftStore: KVNamespace, pinStore: KVNamespace }} config
    */
-  constructor ({ store }) {
+  constructor ({ nftStore, pinStore }) {
     /**
      * @readonly
      */
-    this.store = store
+    this.nftStore = nftStore
+    /**
+     * @readonly
+     */
+    this.pinStore = pinStore
   }
 
   /**
    * @param {NFTInfo} info Information about the NFT
    * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
-   * @param {AssetList} assets Assets referenced by the metadata.
-   * @returns {Promise<void>}
+   * @param {Link[]} links Links to assets referenced by the metadata.
    */
-  async record (info, metadata, assets) {
-    if (info.chain !== 'eth') throw new Error(`unsupported chain: ${info.chain}`)
-    if (!info.contract) throw new Error('missing contract hash')
-    if (!info.tokenID) throw new Error('missing token ID')
-
-    Object.entries(assets).forEach(([cid, info]) => {
-      validateAssetCID(cid)
-      validateAssetInfo(info)
-    })
-
+  async addNFT (info, metadata, links) {
+    validateNFTInfo(info)
+    links.forEach(validateLink)
     const rootKey = getRootKey(info)
-
-    await Promise.all([
-      this.store.put(`info:${rootKey}`, JSON.stringify(info)),
-      this.store.put(`metadata:${rootKey}`, JSON.stringify(metadata)),
-      this.store.put(`assets:${rootKey}`, JSON.stringify(Object.keys(assets))),
-      ...Object.entries(assets).map(async ([cid, info]) => {
-        const exists = await this.store.get(`asset:pinned:${cid}`)
-        if (exists) return
-        await this.store.put(`asset:${info.pinStatus}:${cid}`, JSON.stringify(info), { metadata: { size: info.size } })
-      })
-    ])
+    await this.nftStore.put(rootKey, JSON.stringify({ info, metadata, links }))
   }
 
   /**
-   * @param {string} cid
-   * @param {AssetInfo} info
+   * @param {Pin} pin
    */
-  async updateAsset (cid, info) {
-    validateAssetCID(cid)
-    validateAssetInfo(info)
-
-    const existingData = (await Promise.all([
-      this.store.get(`asset:pinned:${cid}`),
-      this.store.get(`asset:pinning:${cid}`),
-      this.store.get(`asset:queued:${cid}`),
-      this.store.get(`asset:failed:${cid}`)
-    ])).find(Boolean)
-
-    if (!existingData) throw new Error(`not found: ${cid}`)
-
-    /** @type AssetInfo */
-    const existing = JSON.parse(existingData)
-    if (existing.pinStatus === info.pinStatus) return
-
-    await this.store.put(`asset:${info.pinStatus}:${cid}`, JSON.stringify(info), { metadata: { size: info.size } })
-    await this.store.delete(`asset:${existing.pinStatus}:${cid}`)
+  async updatePin (pin) {
+    validatePin(pin)
+    const key = `${pin.status}/${pin.cid}`
+    const exists = await this.pinStore.get(key)
+    if (exists != null) return
+    await this.pinStore.put(key, '', { metadata: { size: pin.size } })
   }
 }
 
@@ -88,12 +67,24 @@ export class Vinyl {
  * @param {NFTInfo} info
  * @returns {string}
  */
-const getRootKey = info => [info.chain, info.contract, info.tokenID].join(':')
+const getRootKey = info => [info.chain, info.contract, info.tokenID].join('/')
+
+/**
+ * @param {NFTInfo} info 
+ */
+function validateNFTInfo (info) {
+  if (info == null || typeof info !== 'object') {
+    throw new Error(`invalid NFT info: ${info}`)
+  }
+  if (info.chain !== 'eth') throw new Error(`unsupported chain: ${info.chain}`)
+  if (!info.contract) throw new Error('missing contract hash')
+  if (!info.tokenID) throw new Error('missing token ID')
+}
 
 /**
  * @param {string} cid
  */
-function validateAssetCID (cid) {
+function validateCID (cid) {
   try {
     CID.parse(cid)
   } catch (err) {
@@ -102,16 +93,32 @@ function validateAssetCID (cid) {
 }
 
 /**
- * @param {AssetInfo} info
+ * @param {Pin} pin
  */
-function validateAssetInfo (info) {
-  if (info == null || typeof info !== 'object') {
-    throw new Error(`invalid asset info: ${info}`)
+ function validatePin (pin) {
+  if (pin == null || typeof pin !== 'object') {
+    throw new Error(`invalid pin: ${pin}`)
   }
-  if (!PIN_STATUSES.includes(info.pinStatus)) {
-    throw new Error(`invalid pin status: ${info.pinStatus}`)
+  validateCID(pin.cid)
+  if (!PIN_STATUSES.includes(pin.status)) {
+    throw new Error(`invalid status: ${pin.status}`)
   }
-  if (info.size != null && (typeof info.size !== 'number' || info.size <= 0)) {
-    throw new Error(`invalid size: ${info.size}`)
+  if (pin.size != null && (typeof pin.size !== 'number' || pin.size <= 0)) {
+    throw new Error(`invalid size: ${pin.size}`)
+  }
+}
+
+/**
+ * @param {Link} link
+ */
+function validateLink (link) {
+  if (link == null || typeof link !== 'object') {
+    throw new Error(`invalid asset: ${link}`)
+  }
+  if (link.cid != null) {
+    validateCID(link.cid)
+  }
+  if (link.name != null && typeof link.name !== 'string') {
+    throw new Error('invalid link name')
   }
 }

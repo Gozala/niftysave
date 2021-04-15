@@ -27,7 +27,7 @@ export class StorProcAPI {
 
   /**
    * @param {string} asset Asset to store.
-   * @returns {Promise<import('./StorProc').StoreResult>}
+   * @returns {Promise<import('./StorProc').StoreAssetResult>}
    */
   async store (asset) {
     const url = new URL('/api/store', this.endpoint)

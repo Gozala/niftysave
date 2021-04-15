@@ -1,7 +1,7 @@
 {
-  "name": "@niftysave/storproc",
-  "version": "0.1.0",
-  "description": "Process that stores an assets on nft.storage.",
+  "name": "@niftysave/orch",
+  "version": "0.0.0",
+  "description": "Process that orchestrates the process of saving NFTs to nft.storage.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -11,19 +11,13 @@
   },
   "author": "Alan Shaw",
   "license": "(Apache-2.0 AND MIT)",
-  "dependencies": {
-    "@niftysave/followup": "^0.1.1",
-    "@niftysave/router": "^0.1.0",
-    "@niftysave/vinyl": "^0.1.0",
-    "multiformats": "^6.0.0",
-    "nft.storage": "^0.4.1"
-  },
   "devDependencies": {
     "@cloudflare/workers-types": "^2.2.1",
     "@types/assert": "^1.5.4",
     "@types/mocha": "^8.2.2",
     "assert": "^2.0.0",
     "c8": "^7.7.1",
+    "cf-workers-memkv": "^1.0.2",
     "mocha": "^8.3.2",
     "standard": "^16.0.3"
   },
@@ -31,6 +25,11 @@
     "ignore": [
       "*.ts"
     ]
+  },
+  "dependencies": {
+    "@niftysave/followup": "^0.1.1",
+    "@niftysave/storproc": "^0.1.0",
+    "@niftysave/vinyl": "^0.1.0"
   },
   "repository": {
     "type": "git",
@@ -42,6 +41,7 @@
   "bugs": {
     "url": "https://github.com/nftstorage/niftysave/issues"
   },
+  "homepage": "https://github.com/nftstorage/niftysave#readme",
   "publishConfig": {
     "access": "public"
   }

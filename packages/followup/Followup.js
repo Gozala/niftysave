@@ -10,8 +10,8 @@ export const BACKOFF = MINUTE // time between checks, multiplied by the number o
 
 /**
  * @typedef {'queued'|'pinning'|'failed'} Status
- * @typedef {{ cid: string, pinStatus: Status }} AssetReg
- * @typedef {{ cid: string, pinStatus: Status, checks: number, updated: Date, created: Date }} Asset
+ * @typedef {{ cid: string, status: Status }} Pin
+ * @typedef {{ cid: string, status: Status, checks: number, updated: Date, created: Date }} FollowingPin
  */
 
 export class Followup {
@@ -43,22 +43,21 @@ export class Followup {
   }
 
   /**
-   * @param {Iterable<AssetReg>} assets
+   * @param {Iterable<Pin>} pins
    * @returns {Promise<void>}
    */
-  async register (assets) {
-    for (const reg of assets) {
-      validateAssetCID(reg.cid)
-      validatePinStatus(reg.pinStatus)
+  async register (pins) {
+    for (const pin of pins) {
+      validatePin(pin)
     }
-    for (const reg of assets) {
-      const exists = await this.store.get(reg.cid)
+    for (const pin of pins) {
+      const exists = await this.store.get(pin.cid)
       if (exists != null) return // already following up
 
       const now = new Date()
-      /** @type {Asset} */
-      const info = { cid: reg.cid, pinStatus: reg.pinStatus, checks: 0, updated: now, created: now }
-      await this.store.put(reg.cid, '', { metadata: info })
+      /** @type {FollowingPin} */
+      const info = { cid: pin.cid, status: pin.status, checks: 0, updated: now, created: now }
+      await this.store.put(pin.cid, '', { metadata: info })
     }
   }
 
@@ -67,12 +66,12 @@ export class Followup {
    * @param {number} limit
    */
   async followup (limit = 10) {
-    const assets = await this.getNextAssets(limit)
+    const assets = await this.getNextPins(limit)
     /** @type {Error[]} */
     const errors = []
     for (const asset of assets) {
       try {
-        await this.followupAsset(asset)
+        await this.followupPin(asset)
       } catch (err) {
         err.message = `follow-up on ${asset.cid}: ${err.message}`
         errors.push(err)
@@ -85,68 +84,68 @@ export class Followup {
   }
 
   /**
-   * Fetch the next n assets to follow up on.
+   * Fetch the next n pins to follow up on.
    * @private
    * @param {number} limit
-   * @returns {Promise<Asset[]>}
+   * @returns {Promise<FollowingPin[]>}
    */
-  async getNextAssets (limit) {
-    /** @type {Asset[]} */
-    const assets = []
+  async getNextPins (limit) {
+    /** @type {FollowingPin[]} */
+    const pins = []
     let cursor
     const now = Date.now()
     while (true) {
       // @ts-ignore
       const list = await this.store.list({ limit: 1000, cursor })
       for (const key of list.keys) {
-        const asset = {
+        const pin = {
           cid: key.name,
-          pinStatus: key.metadata.pinStatus,
+          status: key.metadata.pinStatus,
           checks: key.metadata.checks,
           updated: new Date(key.metadata.updated),
           created: new Date(key.metadata.created)
         }
-        if (now - asset.updated.getTime() > (asset.checks * BACKOFF)) {
-          assets.push(asset)
+        if (now - pin.updated.getTime() > (pin.checks * BACKOFF)) {
+          pins.push(pin)
         }
-        if (assets.length >= limit) {
+        if (pins.length >= limit) {
           break
         }
       }
-      if (assets.length >= limit || list.list_complete) {
+      if (pins.length >= limit || list.list_complete) {
         break
       }
       cursor = list.cursor
     }
-    return assets
+    return pins
   }
 
   /**
    * @private
-   * @param {Asset} asset
+   * @param {FollowingPin} pin
    * @returns {boolean}
    */
-  isExpired (asset) {
-    return Date.now() - asset.created.getTime() > this.maxAge
+  isExpired (pin) {
+    return Date.now() - pin.created.getTime() > this.maxAge
   }
 
   /**
    * @private
-   * @param {Asset} asset
+   * @param {FollowingPin} pin
    */
-  async followupAsset (asset) {
-    let pinStatus, size
+  async followupPin (pin) {
+    let status, size
     try {
-      const status = await this.client.status(asset.cid)
-      pinStatus = status.pin.status
-      size = status.size
+      const res = await this.client.status(pin.cid)
+      status = res.pin.status
+      size = res.size
     } catch (err) {
-      if (this.isExpired(asset)) {
-        await this.vinyl.updateAsset(asset.cid, { pinStatus: 'failed', size: size || 0 })
-        await this.store.delete(asset.cid)
+      if (this.isExpired(pin)) {
+        await this.vinyl.updatePin({ cid: pin.cid, status: 'failed', size: 0 })
+        await this.store.delete(pin.cid)
       } else {
-        await this.store.put(asset.cid, '', {
-          metadata: { ...asset, checks: asset.checks + 1, updated: new Date() }
+        await this.store.put(pin.cid, '', {
+          metadata: { ...pin, checks: pin.checks + 1, updated: new Date() }
         })
       }
       err.message = `fetching status: ${err.message}`
@@ -154,37 +153,45 @@ export class Followup {
     }
 
     try {
-      switch (pinStatus) {
+      switch (status) {
         case 'pinned':
         case 'failed':
-          await this.vinyl.updateAsset(asset.cid, { pinStatus, size })
+          await this.vinyl.updatePin({ cid: pin.cid, status, size })
           // TODO: retry on fail?
-          await this.store.delete(asset.cid)
+          await this.store.delete(pin.cid)
           break
         default:
-          if (this.isExpired(asset)) {
-            await this.vinyl.updateAsset(asset.cid, { pinStatus: 'failed', size })
-            await this.store.delete(asset.cid)
+          if (this.isExpired(pin)) {
+            await this.vinyl.updatePin({ cid: pin.cid, status: 'failed', size: 0 })
+            await this.store.delete(pin.cid)
             break
           }
-          if (pinStatus !== asset.pinStatus) {
-            await this.vinyl.updateAsset(asset.cid, { pinStatus, size })
+          if (status !== pin.status) {
+            await this.vinyl.updatePin({ cid: pin.cid, status, size })
           }
-          await this.store.put(asset.cid, '', {
-            metadata: { ...asset, checks: asset.checks + 1, updated: new Date(), pinStatus }
+          await this.store.put(pin.cid, '', {
+            metadata: { ...pin, checks: pin.checks + 1, updated: new Date(), status }
           })
       }
     } catch (err) {
-      err.message = `updating pin status: ${pinStatus} size: ${size} info: ${err.message}`
+      err.message = `updating pin status: ${status} size: ${size} info: ${err.message}`
       throw err
     }
   }
 }
 
 /**
+ * @param {Pin} pin 
+ */
+function validatePin (pin) {
+  validateCID(pin.cid)
+  validatePinStatus(pin.status)
+}
+
+/**
  * @param {string} cid
  */
-function validateAssetCID (cid) {
+function validateCID (cid) {
   try {
     CID.parse(cid)
   } catch (err) {

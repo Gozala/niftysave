@@ -4,8 +4,10 @@ import { Vinyl } from './Vinyl.js'
 
 /** @type KVNamespace */
 // @ts-ignore
-const store = self.NFTS
-const vy = new Vinyl({ store })
+const nftStore = self.NFTS
+// @ts-ignore
+const pinStore = self.PINS
+const vy = new Vinyl({ nftStore, pinStore })
 const r = new Router({
   onError: (_, err) => new Response(JSON.stringify({ message: err.message }), {
     // @ts-ignore
@@ -20,17 +22,17 @@ const r = new Router({
 
 r.add('options', '/api/*', cors)
 // TODO: basic auth
-r.add('post', '/api/record', handleRecord, [postCors])
-r.add('post', '/api/asset/:cid', handleUpdateAsset, [postCors])
+r.add('post', '/api/nft', handleAddNFT, [postCors])
+r.add('post', '/api/pin/:cid', handleUpdatePin, [postCors])
 
 addEventListener('fetch', r.listen.bind(r))
 
 /**
  * @param {FetchEvent} event
  */
-async function handleRecord (event) {
+async function handleAddNFT (event) {
   const { info, metadata, assets } = await event.request.json()
-  await vy.record(info, metadata, assets)
+  await vy.addNFT(info, metadata, assets)
   return new Response()
 }
 
@@ -38,8 +40,8 @@ async function handleRecord (event) {
  * @param {FetchEvent} event
  * @param {Record<string, string>} params
  */
-async function handleUpdateAsset (event, params) {
-  const info = await event.request.json()
-  await vy.updateAsset(params.cid, info)
+async function handleUpdatePin (event, params) {
+  const pin = await event.request.json()
+  await vy.updatePin({ ...pin, cid: params.cid })
   return new Response()
 }

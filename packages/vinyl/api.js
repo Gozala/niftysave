@@ -28,14 +28,14 @@ export class VinylAPI {
   /**
    * @param {import('./Vinyl').NFTInfo} info Information about the NFT
    * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
-   * @param {{ [cid: string]: import('./Vinyl').AssetInfo }} assets Assets referenced by the metadata.
+   * @param {import('./Vinyl').Link[]} links Links to assets referenced by the metadata.
    * @returns {Promise<void>}
    */
-  async record (info, metadata, assets) {
-    const url = new URL('/api/register', this.endpoint)
+  async addNFT (info, metadata, links) {
+    const url = new URL('/api/nft', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({ info, metadata, assets })
+      body: JSON.stringify({ info, metadata, links })
     })
     if (!res.ok) {
       const text = await res.text()
@@ -45,18 +45,17 @@ export class VinylAPI {
   }
 
   /**
-   * @param {string} cid
-   * @param {import('./Vinyl').AssetInfo} info
+   * @param {import('./Vinyl').Pin} pin
    */
-  async updateAsset (cid, info) {
-    const url = new URL(`/api/asset/${encodeURIComponent(cid)}`, this.endpoint)
+  async updatePin (pin) {
+    const url = new URL(`/api/pin/${encodeURIComponent(pin.cid)}`, this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({ info })
+      body: JSON.stringify({ status: pin.status, size: pin.size })
     })
     if (!res.ok) {
       const text = await res.text()
-      throw new Error(`${res.status} status updating asset ${cid} response: ${text}`)
+      throw new Error(`${res.status} status updating pin ${pin.cid} response: ${text}`)
     }
     return res.json()
   }
