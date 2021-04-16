@@ -12,9 +12,9 @@ const PASSWORD = 'pass'
 
 /**
  * @param {any} meta
- * @returns {import('./Followup.js').Asset}
+ * @returns {import('./Followup.js').FollowingPin}
  */
-function metaToAsset (meta) {
+function metaToPin (meta) {
   return { ...meta, created: new Date(meta.created), updated: new Date(meta.updated) }
 }
 
@@ -32,13 +32,13 @@ function mockClientStatus (client, ...calls) {
 
 /**
  * @param {VinylAPI} vinyl
- * @param  {...InstanceType<typeof VinylAPI>['updateAsset']} calls
+ * @param  {...InstanceType<typeof VinylAPI>['updatePin']} calls
  */
-function mockVinylUpdateAsset (vinyl, ...calls) {
-  vinyl.updateAsset = (cid, info) => {
+function mockVinylUpdatePin (vinyl, ...calls) {
+  vinyl.updatePin = pin => {
     const call = calls.shift()
-    if (call == null) throw new Error('unexpected updateAsset call')
-    return call(cid, info)
+    if (call == null) throw new Error('unexpected updatePin call')
+    return call(pin)
   }
 }
 
@@ -67,23 +67,23 @@ describe('Followup', () => {
 
   it('register validation', async () => {
     await assert.rejects(
-      fup.register([{ cid: 'bad cid', pinStatus: 'queued' }]),
+      fup.register([{ cid: 'bad cid', status: 'queued' }]),
       /invalid asset CID:/
     )
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
     await assert.rejects(
       // @ts-ignore
-      fup.register([{ cid, pinStatus: 'pinned' }]),
+      fup.register([{ cid, status: 'pinned' }]),
       { message: 'invalid pin status: pinned' }
     )
   })
 
   it('register', async () => {
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
-    await fup.register([{ cid, pinStatus: 'pinning' }])
+    await fup.register([{ cid, status: 'pinning' }])
     const result = await store.getWithMetadata(cid)
-    const asset = metaToAsset(result.metadata)
-    assert.strictEqual(asset.pinStatus, 'pinning')
+    const asset = metaToPin(result.metadata)
+    assert.strictEqual(asset.status, 'pinning')
     assert.strictEqual(asset.checks, 0)
     assert(Date.now() - new Date(asset.updated).getTime() < 1000)
     assert(Date.now() - new Date(asset.created).getTime() < 1000)
@@ -91,11 +91,11 @@ describe('Followup', () => {
 
   it('register asset exists', async () => {
     const cid = 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH'
-    await store.put(cid, '', { metadata: { pinStatus: 'pinning' } })
-    await fup.register([{ cid, pinStatus: 'queued' }])
+    await store.put(cid, '', { metadata: { status: 'pinning' } })
+    await fup.register([{ cid, status: 'queued' }])
     const result = await store.getWithMetadata(cid)
-    const asset = metaToAsset(result.metadata)
-    assert.strictEqual(asset.pinStatus, 'pinning')
+    const asset = metaToPin(result.metadata)
+    assert.strictEqual(asset.status, 'pinning')
   })
 
   it('followup', async () => {
@@ -104,7 +104,7 @@ describe('Followup', () => {
     const then = new Date(now.getTime() - BACKOFF - 1)
 
     await store.put(cid, '', {
-      metadata: { cid, pinStatus: 'queued', checks: 0, updated: then, created: then }
+      metadata: { cid, status: 'queued', checks: 0, updated: then, created: then }
     })
 
     mockClientStatus(
@@ -129,27 +129,27 @@ describe('Followup', () => {
       }
     )
 
-    mockVinylUpdateAsset(
+    mockVinylUpdatePin(
       vy,
       // queued => pinning
-      async (c, info) => {
-        assert.strictEqual(c, cid)
-        assert.strictEqual(info.pinStatus, 'pinning')
-        assert.strictEqual(info.size, 0)
+      async pin => {
+        assert.strictEqual(pin.cid, cid)
+        assert.strictEqual(pin.status, 'pinning')
+        assert.strictEqual(pin.size, 0)
       },
       // pinning => pinned
-      async (c, info) => {
-        assert.strictEqual(c, cid)
-        assert.strictEqual(info.pinStatus, 'pinned')
-        assert.strictEqual(info.size, 1234)
+      async pin => {
+        assert.strictEqual(pin.cid, cid)
+        assert.strictEqual(pin.status, 'pinned')
+        assert.strictEqual(pin.size, 1234)
       }
     )
 
     await fup.followup()
 
     const { metadata } = await store.getWithMetadata(cid)
-    const asset = metaToAsset(metadata)
-    assert.strictEqual(asset.pinStatus, 'pinning')
+    const asset = metaToPin(metadata)
+    assert.strictEqual(asset.status, 'pinning')
     assert.strictEqual(asset.checks, 1)
     assert.deepStrictEqual(asset.created, then)
     assert(asset.updated.getTime() > now.getTime())
@@ -183,13 +183,13 @@ describe('Followup', () => {
       }
     )
 
-    mockVinylUpdateAsset(vy, () => assert.fail('updateAsset called for non-change to pin status'))
+    mockVinylUpdatePin(vy, () => assert.fail('updateAsset called for non-change to pin status'))
 
     await fup.followup()
 
     const { metadata } = await store.getWithMetadata(cid)
-    const asset = metaToAsset(metadata)
-    assert.strictEqual(asset.pinStatus, 'pinning')
+    const asset = metaToPin(metadata)
+    assert.strictEqual(asset.status, 'pinning')
     assert.strictEqual(asset.checks, 1)
     assert.deepStrictEqual(asset.created, then)
     assert(asset.updated.getTime() > now.getTime())
@@ -216,10 +216,10 @@ describe('Followup', () => {
       }
     )
 
-    mockVinylUpdateAsset(vy, async (c, info) => {
-      assert.strictEqual(c, cid)
-      assert.strictEqual(info.pinStatus, 'failed')
-      assert.strictEqual(info.size, 0)
+    mockVinylUpdatePin(vy, async pin => {
+      assert.strictEqual(pin.cid, cid)
+      assert.strictEqual(pin.status, 'failed')
+      assert.strictEqual(pin.size, 0)
     })
 
     await fup.followup()
@@ -250,8 +250,8 @@ describe('Followup', () => {
     })
 
     const { metadata } = await store.getWithMetadata(cid)
-    const asset = metaToAsset(metadata)
-    assert.strictEqual(asset.pinStatus, 'queued')
+    const asset = metaToPin(metadata)
+    assert.strictEqual(asset.status, 'queued')
     assert.strictEqual(asset.checks, 1)
     assert.deepStrictEqual(asset.created, then)
     assert(asset.updated.getTime() > now.getTime())
@@ -268,13 +268,13 @@ describe('Followup', () => {
 
     mockClientStatus(client, () => { throw new Error('boom') })
 
-    mockVinylUpdateAsset(
+    mockVinylUpdatePin(
       vy,
       // queued => failed
-      async (c, info) => {
-        assert.strictEqual(c, cid)
-        assert.strictEqual(info.pinStatus, 'failed')
-        assert.strictEqual(info.size, 0)
+      async pin => {
+        assert.strictEqual(pin.cid, cid)
+        assert.strictEqual(pin.status, 'failed')
+        assert.strictEqual(pin.size, 0)
       }
     )
 

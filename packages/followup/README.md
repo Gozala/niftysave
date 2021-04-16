@@ -9,7 +9,7 @@ Cron process that follows up on assets that are being pinned to get them pinned.
 
 ### `POST /api/register`
 
-Register an NFT asset(s) for follow-up. This means periodically checking on its pinning status to see if it has completed pinning. Each status change is recorded to [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl).
+Register NFT asset(s) for follow-up. This means periodically checking on its pinning status to see if it has completed pinning. Each status change is recorded to [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl).
 
 Assets which have not become pinned within 24 hours are marked as failed and never checked again.
 
@@ -19,7 +19,7 @@ Accepts an `application/json` body like:
 [
   {
     "cid": "bafy...",
-    "pinStatus": "queued | pinning | failed" // Note: NOT "pinned"
+    "status": "queued | pinning | failed" // Note: NOT "pinned"
   },
   // ...
 ]

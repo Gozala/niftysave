@@ -1,7 +1,7 @@
-export type Status = 'queued'|'pinning'|'failed'
-export type AssetReg = { cid: string, pinStatus: Status }
+export type PendingStatus = import('./Followup').PendingStatus
+export type PendingPin = import('./Followup').PendingPin
 
 export class FollowupAPI {
   constructor (config: { endpoint: URL, username: string, password: string })
-  register (assets: AssetReg[]): Promise<void>
+  register (pins: Iterable<PendingPin>): Promise<void>
 }

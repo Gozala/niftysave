@@ -1,15 +1,20 @@
 /* eslint-env worker */
 
+const MAX_EPOCHS = 100
+
+/**
+ * @typedef {{ lastEpoch: number }} ChainState
+ * @typedef {Record<string, ChainState>} State
+ */
+
 export class Orch {
   /**
    * @param {{
    *  store: KVNamespace,
    *  storProc: import('@niftysave/storproc/api').StorProcAPI,
-   *  vinyl: import('@niftysave/vinyl/api').VinylAPI,
-   *  followup: import('@niftysave/followup/api').FollowupAPI,
    * }} config
    */
-  constructor ({ store, storProc, vinyl, followup }) {
+  constructor ({ store, storProc }) {
     /**
      * @readonly
      */
@@ -18,17 +23,20 @@ export class Orch {
      * @readonly
      */
     this.storProc = storProc
-    /**
-     * @readonly
-     */
-    this.vinyl = vinyl
-    /**
-     * @readonly
-     */
-    this.followup = followup
+  }
+
+  /**
+   * @private
+   * @returns {Promise<State>}
+   */
+  async getState () {
+    /** @type State | null */
+    const state = await this.store.get('state', 'json')
+    return state || { eth: { lastEpoch: 0 } }
   }
 
   async run () {
-    const state = this.store.get('state')
+    const state = await this.getState()
+    const chainStates = Array.from(Object.values(state))
   }
 }

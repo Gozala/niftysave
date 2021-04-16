@@ -1,6 +1,8 @@
-export type StoreResult = import('./StorProc').StoreAssetResult
+export type NFTInfo = import('@niftysave/vinyl/api').NFTInfo
+export type Metadata = import('@niftysave/vinyl/api').Metadata
+export type FoundNFT = import('./StorProc').FoundNFT
 
 export class StorProcAPI {
   constructor (config: { endpoint: URL, username: string, password: string })
-  store (asset: string): Promise<StoreResult>
+  storeNFT (nft: FoundNFT): Promise<void>
 }

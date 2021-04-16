@@ -26,14 +26,14 @@ export class FollowupAPI {
   }
 
   /**
-   * @param {import('./Followup').AssetReg[]} assets
+   * @param {Iterable<import('./Followup').Pin>} pins
    * @returns {Promise<void>}
    */
-  async register (assets) {
+  async register (pins) {
     const url = new URL('/api/register', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify(assets)
+      body: JSON.stringify(Array.from(pins))
     })
     if (!res.ok) {
       const text = await res.text()

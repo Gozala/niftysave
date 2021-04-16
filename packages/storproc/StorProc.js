@@ -1,6 +1,19 @@
 /* eslint-env worker */
-import { NFTStorage } from 'nft.storage'
+/* global AggregateError */
+import { NFTStorage, Blob } from 'nft.storage'
 import { CID } from 'multiformats/cid'
+
+/**
+ * Max number of links an NFT is allowed to have.
+ */
+const MAX_LINKS = 10
+
+/**
+ * @typedef {{
+ *   info: import('@niftysave/vinyl/api').NFTInfo,
+ *   metadata: import('@niftysave/vinyl/api').Metadata
+ * }} FoundNFT
+ */
 
 export class StorProc {
   /**
@@ -26,34 +39,46 @@ export class StorProc {
   }
 
   /**
-   * @param {import('@niftysave/vinyl/api').NFTInfo} info Information about the NFT.
-   * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
+   * @param {FoundNFT} nft Information about an NFT found on a blockchain.
    * @returns {Promise<void>}
    */
-  async store (info, metadata) {
+  async storeNFT (nft) {
+    validateFoundNFT(nft)
     const metadataLink = {
       name: 'metadata.json',
-      cid: await this.client.storeBlob(new Blob([JSON.stringify(metadata)]))
+      cid: await this.client.storeBlob(new Blob([JSON.stringify(nft.metadata)]))
     }
-    const links = [
-      metadataLink,
-      ...getLinks(metadata)
-    ]
-    await this.vinyl.addNFT(info, metadata, links)
-    /** @type import('@niftysave/vinyl/api').Pin[] */
-    const pins = []
+    const links = [metadataLink, ...getLinks(nft.metadata)]
+    /** @type import('@niftysave/followup/api').PendingPin[] */
+    const pendingPins = []
     try {
-      for (const link of links.slice(1)) {
+      /** @type Error[] */
+      const errors = []
+      if (links.length > MAX_LINKS + 1) {
+        errors.push(new Error(`exceeded maximum number of links: ${links.length - 1}`))
+      }
+      for (const link of links.slice(1, MAX_LINKS + 1)) {
         try {
-          const pin = await this.pin(link)
-          pins.push(pin)
+          const { cid, status } = await this.pin(link)
+          if (status !== 'pinned') {
+            pendingPins.push({ cid, status })
+          }
+          link.cid = cid
         } catch (err) {
-          console.warn('failed to store link', link, err)
+          err.message = `pinning ${link}: ${err.message}`
+          errors.push(err)
+          console.warn(err)
           continue
         }
       }
+      if (errors.length) {
+        throw new AggregateError(errors, 'pinning links')
+      }
     } finally {
-      await this.followup.register(pins.filter(p => p.status !== 'pinned'))
+      await this.vinyl.addNFT({ ...nft, links })
+      if (pendingPins.length) {
+        await this.followup.register(pendingPins)
+      }
     }
   }
 
@@ -139,5 +164,17 @@ function isCID (str) {
     return true
   } catch (_) {
     return false
+  }
+}
+
+/**
+ * @param {FoundNFT} nft
+ */
+function validateFoundNFT (nft) {
+  if (nft == null || typeof nft !== 'object') {
+    throw new Error('invalid NFT')
+  }
+  if (nft.metadata == null || typeof nft.metadata !== 'object') {
+    throw new Error('missing or invalid NFT metadata')
   }
 }

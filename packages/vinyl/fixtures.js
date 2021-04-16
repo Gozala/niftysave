@@ -1,4 +1,4 @@
-/** @typedef {{ info: import("./Vinyl").NFTInfo, metadata: any, assets: import("./Vinyl").AssetList }} NFTFixture */
+/** @typedef {{ info: import("./Vinyl").NFTInfo, metadata: any, links: import("./Vinyl").Link[] }} NFTFixture */
 
 /** @type {NFTFixture[]} */
 export const nfts = [
@@ -34,9 +34,9 @@ export const nfts = [
         ' portrait'
       ]
     },
-    assets: {
-      QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH: { pinStatus: 'pinned', size: 587 },
-      QmbBJC44fG6mhroRU7T8zDhWGjwg56Th6C3eYPp7Z2WPPq: { pinStatus: 'pinning' }
-    }
+    links: [
+      { cid: 'QmcaNzvacPR983ncCYgxuDUNgSLcdtkdo9gPqNXVYpQ9VH', name: 'metadata.json' },
+      { cid: 'QmbBJC44fG6mhroRU7T8zDhWGjwg56Th6C3eYPp7Z2WPPq', name: 'https://ipfs.pixura.io/ipfs/QmbBJC44fG6mhroRU7T8zDhWGjwg56Th6C3eYPp7Z2WPPq' }
+    ]
   }
 ]

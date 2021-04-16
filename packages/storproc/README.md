@@ -3,13 +3,13 @@
 [![CI](https://github.com/nftstorage/niftysave/actions/workflows/main.yml/badge.svg)](https://github.com/nftstorage/niftysave/actions/workflows/main.yml)
 [![dependencies Status](https://status.david-dm.org/gh/nftstorage/niftysave.svg?path=packages%2Fstorproc)](https://david-dm.org/nftstorage/niftysave?path=packages/storproc)
 
-Process that stores an assets on nft.storage.
+Process that stores NFT assets on nft.storage.
 
 ## API
 
-### `POST /api/store`
+### `POST /api/nft`
 
-Store an asset on https://nft.storage, record it with [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl) and register any assets with [Followup](https://github.com/nftstorage/niftysave/tree/main/packages/followup).
+Store NFT assets on https://nft.storage, record NFT information with [Vinyl](https://github.com/nftstorage/niftysave/tree/main/packages/vinyl) and register any pending assets with [Followup](https://github.com/nftstorage/niftysave/tree/main/packages/followup).
 
 Accepts an `application/json` body like:
 

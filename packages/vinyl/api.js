@@ -26,26 +26,24 @@ export class VinylAPI {
   }
 
   /**
-   * @param {import('./Vinyl').NFTInfo} info Information about the NFT
-   * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
-   * @param {import('./Vinyl').Link[]} links Links to assets referenced by the metadata.
+   * @param {import('./Vinyl').NFT} nft NFT to add.
    * @returns {Promise<void>}
    */
-  async addNFT (info, metadata, links) {
+  async addNFT (nft) {
     const url = new URL('/api/nft', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({ info, metadata, links })
+      body: JSON.stringify(nft)
     })
     if (!res.ok) {
       const text = await res.text()
-      throw new Error(`${res.status} status registering ${info.chain} token: ${info.tokenID} contract: ${info.contract} response: ${text}`)
+      throw new Error(`${res.status} status adding NFT: ${text}`)
     }
     return res.json()
   }
 
   /**
-   * @param {import('./Vinyl').Pin} pin
+   * @param {import('./Vinyl').Pin} pin Pin information to update.
    */
   async updatePin (pin) {
     const url = new URL(`/api/pin/${encodeURIComponent(pin.cid)}`, this.endpoint)

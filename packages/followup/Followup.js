@@ -9,9 +9,9 @@ export const MAX_AGE = DAY * 7 // if we can't pin it in 7 days it is probably lo
 export const BACKOFF = MINUTE // time between checks, multiplied by the number of checks
 
 /**
- * @typedef {'queued'|'pinning'|'failed'} Status
- * @typedef {{ cid: string, status: Status }} Pin
- * @typedef {{ cid: string, status: Status, checks: number, updated: Date, created: Date }} FollowingPin
+ * @typedef {'queued'|'pinning'|'failed'} PendingStatus
+ * @typedef {{ cid: string, status: PendingStatus }} PendingPin
+ * @typedef {{ cid: string, status: PendingStatus, checks: number, updated: Date, created: Date }} FollowingPin
  */
 
 export class Followup {
@@ -43,7 +43,7 @@ export class Followup {
   }
 
   /**
-   * @param {Iterable<Pin>} pins
+   * @param {Iterable<PendingPin>} pins
    * @returns {Promise<void>}
    */
   async register (pins) {
@@ -65,15 +65,15 @@ export class Followup {
    * Follow-up on the next n assets.
    * @param {number} limit
    */
-  async followup (limit = 10) {
-    const assets = await this.getNextPins(limit)
+  async followup (limit = 25) {
+    const pins = await this.getNextPins(limit)
     /** @type {Error[]} */
     const errors = []
-    for (const asset of assets) {
+    for (const pin of pins) {
       try {
-        await this.followupPin(asset)
+        await this.followupPin(pin)
       } catch (err) {
-        err.message = `follow-up on ${asset.cid}: ${err.message}`
+        err.message = `follow-up on ${pin.cid}: ${err.message}`
         errors.push(err)
       }
     }
@@ -181,7 +181,7 @@ export class Followup {
 }
 
 /**
- * @param {Pin} pin 
+ * @param {PendingPin} pin 
  */
 function validatePin (pin) {
   validateCID(pin.cid)

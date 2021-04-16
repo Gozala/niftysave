@@ -31,8 +31,8 @@ addEventListener('fetch', r.listen.bind(r))
  * @param {FetchEvent} event
  */
 async function handleAddNFT (event) {
-  const { info, metadata, assets } = await event.request.json()
-  await vy.addNFT(info, metadata, assets)
+  const nft = await event.request.json()
+  await vy.addNFT(nft)
   return new Response()
 }
 

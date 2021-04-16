@@ -14,10 +14,9 @@ import { CID } from 'multiformats/cid'
  *  status: import('./types/psa').Status,
  *  size?: number
  * }} Pin
- * @typedef {{
- *  name: string,
- *  cid?: string
- * }} Link
+ * @typedef {Record<string, any>} Metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
+ * @typedef {{ name: string, cid?: string }} Link Links to assets referenced by the metadata.
+ * @typedef {{ info: NFTInfo, metadata: Metadata, links: Link[] }} NFT Information about the NFT.
  */
 
 const PIN_STATUSES = Object.freeze(['queued', 'pinning', 'pinned', 'failed'])
@@ -39,15 +38,12 @@ export class Vinyl {
   }
 
   /**
-   * @param {NFTInfo} info Information about the NFT
-   * @param {any} metadata NFT metadata (usually in ERC-721 or ERC-1155 format).
-   * @param {Link[]} links Links to assets referenced by the metadata.
+   * @param {NFT} nft Information about the NFT
    */
-  async addNFT (info, metadata, links) {
-    validateNFTInfo(info)
-    links.forEach(validateLink)
-    const rootKey = getRootKey(info)
-    await this.nftStore.put(rootKey, JSON.stringify({ info, metadata, links }))
+  async addNFT (nft) {
+    validateNFT(nft)
+    const rootKey = getRootKey(nft.info)
+    await this.nftStore.put(rootKey, JSON.stringify(nft))
   }
 
   /**
@@ -70,7 +66,21 @@ export class Vinyl {
 const getRootKey = info => [info.chain, info.contract, info.tokenID].join('/')
 
 /**
- * @param {NFTInfo} info 
+ * @param {NFT} nft
+ */
+function validateNFT (nft) {
+  if (nft == null || typeof nft !== 'object') {
+    throw new Error('invalid NFT')
+  }
+  validateNFTInfo(nft.info)
+  if (!Array.isArray(nft.links)) {
+    throw new Error('invalid NFT links')
+  }
+  nft.links.forEach(validateLink)
+}
+
+/**
+ * @param {NFTInfo} info
  */
 function validateNFTInfo (info) {
   if (info == null || typeof info !== 'object') {
@@ -88,14 +98,14 @@ function validateCID (cid) {
   try {
     CID.parse(cid)
   } catch (err) {
-    throw new Error(`invalid asset CID: ${cid}: ${err.message}`)
+    throw new Error(`invalid CID: ${cid}: ${err.message}`)
   }
 }
 
 /**
  * @param {Pin} pin
  */
- function validatePin (pin) {
+function validatePin (pin) {
   if (pin == null || typeof pin !== 'object') {
     throw new Error(`invalid pin: ${pin}`)
   }
@@ -113,12 +123,12 @@ function validateCID (cid) {
  */
 function validateLink (link) {
   if (link == null || typeof link !== 'object') {
-    throw new Error(`invalid asset: ${link}`)
+    throw new Error('invalid link')
   }
   if (link.cid != null) {
     validateCID(link.cid)
   }
-  if (link.name != null && typeof link.name !== 'string') {
+  if (!link.name || typeof link.name !== 'string') {
     throw new Error('invalid link name')
   }
 }

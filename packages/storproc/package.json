@@ -1,7 +1,7 @@
 {
   "name": "@niftysave/storproc",
   "version": "0.1.0",
-  "description": "Process that stores an assets on nft.storage.",
+  "description": "Process that stores NFT assets on nft.storage.",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -22,6 +22,7 @@
     "@cloudflare/workers-types": "^2.2.1",
     "@types/assert": "^1.5.4",
     "@types/mocha": "^8.2.2",
+    "@web-std/fetch": "^1.0.0",
     "assert": "^2.0.0",
     "c8": "^7.7.1",
     "mocha": "^8.3.2",

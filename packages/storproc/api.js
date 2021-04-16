@@ -26,18 +26,18 @@ export class StorProcAPI {
   }
 
   /**
-   * @param {string} asset Asset to store.
-   * @returns {Promise<import('./StorProc').StoreAssetResult>}
+   * @param {import('./StorProc').FoundNFT} nft Information about an NFT found on a blockchain.
+   * @returns {Promise<void>}
    */
-  async store (asset) {
-    const url = new URL('/api/store', this.endpoint)
+  async storeNFT (nft) {
+    const url = new URL('/api/nft', this.endpoint)
     const res = await fetch(url.toString(), {
       method: 'POST',
-      body: JSON.stringify({ asset })
+      body: JSON.stringify(nft)
     })
     if (!res.ok) {
       const text = await res.text()
-      throw new Error(`${res.status} status storing: ${asset} response: ${text}`)
+      throw new Error(`${res.status} status storing NFT: ${text}`)
     }
     return res.json()
   }
