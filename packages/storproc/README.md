@@ -13,7 +13,7 @@ Store NFT assets on https://nft.storage, record NFT information with [Vinyl](htt
 
 Accepts an `application/json` body like:
 
-```json
+```js
 {
   "info" : {
     /* on-chain information about the NFT */
