@@ -23,7 +23,7 @@ r.add('options', '/api/*', cors)
 r.add('post', '/api/record', handleRecord, [postCors])
 r.add('post', '/api/asset/:cid', handleUpdateAsset, [postCors])
 
-addEventListener('fetch', r.listen.bind(r))
+r.listen(this)
 
 /**
  * @param {FetchEvent} event

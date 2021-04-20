@@ -1,8 +1,15 @@
 {
   "name": "root",
   "private": true,
+  "workspaces": [
+    "packages/followup",
+    "packages/router",
+    "packages/storproc",
+    "packages/vinyl",
+    "packages/chainnft"
+  ],
   "scripts": {
-    "postinstall": "lerna bootstrap",
+    "//postinstall": "lerna bootstrap",
     "test": "lerna run test"
   },
   "devDependencies": {

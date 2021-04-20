@@ -25,8 +25,9 @@ function matchParams(path, result) {
     return out
   }
   while (i < keys.length) {
-    out[keys[i]] = matches[++i]
+    out[/** @type {string} */(keys[i])] = matches[++i] || ''
   }
+
   return out
 }
 
@@ -41,6 +42,8 @@ class Router {
    * @param {ErrorHandler} [options.onError]
    */
   constructor(options) {
+    this.handleEvent = this.handleEvent.bind(this)
+
     const defaults = {
       onNotFound() {
         return new Response(null, {
@@ -59,7 +62,7 @@ class Router {
       ...defaults,
       ...options,
     }
-    /** @type {{ conditions: Condition[]; handler: Handler; postHandlers: ResponseHandler[] }[]} */
+    /** @type {{ conditions: [Condition, Condition]; handler: Handler; postHandlers: ResponseHandler[] }[]} */
     this.routes = []
   }
 
@@ -117,10 +120,10 @@ class Router {
    * @return {[Handler|false, Record<string,string>, ResponseHandler[]]}
    */
   resolve(req) {
-    for (let i = 0; i < this.routes.length; i++) {
-      const { conditions, handler, postHandlers } = this.routes[i]
-      const method = conditions[0](req)
-      const routeParams = conditions[1](req)
+    for (const { conditions, handler, postHandlers } of this.routes) {
+      const [matchMethod, matchPath ]= conditions
+      const method = matchMethod(req)
+      const routeParams = matchPath(req)
       if (method && typeof routeParams !== 'boolean') {
         return [handler, routeParams, postHandlers]
       }
@@ -155,9 +158,19 @@ class Router {
    *
    * @param {FetchEvent} event
    */
-  listen(event) {
+  handleEvent(event) {
     event.respondWith(this.route(event))
+  }
+
+  /**
+   * @param {{addEventListener(event:'fetch', listener:(event:FetchEvent) => void):void}} context 
+   */
+  listen(context) {
+    context.addEventListener("fetch", this.handleEvent)
   }
 }
 
 export { Router }
+
+
+self.addEventListener

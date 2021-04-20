@@ -1,0 +1,11 @@
+name = "nftysave-chainnft-dev"
+account_id = "fffa4b4363a7e5250af8357087263b3a"
+type = "webpack"
+workers_dev = true
+route = ""
+zone_id = ""
+vars = { DEBUG = true }
+kv_namespaces = [ 
+  { binding = "SCAN_STATE", id = "20f8c10eaafb4e4090ac2d9d6ab6df99" },
+  { binding = "SCAN_TABLE", id = "4d8ac6f5521941e59fcaf5439aef5ee1" }
+]

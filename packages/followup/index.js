@@ -28,7 +28,7 @@ r.add('options', '/api/*', cors)
 // TODO: basic auth
 r.add('post', '/api/register', handleRegister, [postCors])
 
-addEventListener('fetch', r.listen.bind(r))
+r.listen(this)
 
 /**
  * @param {FetchEvent} event
