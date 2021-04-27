@@ -70,8 +70,8 @@ export const scan = async (head, state) => {
 
       // If less than requested number of tokens was returned and we're not
       // scanning the last block then we have exhasted this block.
-      if (result.value.tokens.length < PAGE_SIZE) {
-        cell.update(state => ({ ...state, endTime: Date.now() }))
+      if (result.value.tokens.length < PAGE_SIZE && state.blockNumber < head) {
+        await cell.update(state => ({ ...state, endTime: Date.now() }))
       }
       // Otherwise we just mark cursor idle and exit.
       else {
