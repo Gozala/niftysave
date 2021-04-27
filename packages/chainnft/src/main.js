@@ -120,15 +120,22 @@ const queryHead = async () => {
  * @returns {Promise<Result.Result<Error, void>>}
  */
 const spawn = async ({ blockNumber, lastBlock }) => {
-  const url = new URL(`/api/scan/${blockNumber}`, ENDPOINT)
-  const response = await fetch(url.href, {
-    method: "POST",
-    body: JSON.stringify({ lastBlock }),
-  })
-  const result = await response.json()
-  return result.ok
-    ? result
-    : { ok: false, error: new Error(result.error.message) }
+  // try block to ensures that promise can never fail.
+  try {
+    const url = new URL(`/api/scan/${blockNumber}`, ENDPOINT)
+    const response = await fetch(url.href, {
+      method: "POST",
+      body: JSON.stringify({ lastBlock }),
+    })
+    const result = await response.json()
+    if (result.ok) {
+      return result
+    } else {
+      throw new Error(result.error.message)
+    }
+  } catch (error) {
+    return { ok: false, error }
+  }
 }
 
 self.addEventListener("scheduled", event => event.waitUntil(activate()))
