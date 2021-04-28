@@ -24,11 +24,19 @@ export const status = state => {
 }
 
 /**
- * @param {number} head
- * @param {Scan.State} state
+ * @param {number} blockNumber
+ * @returns {Promise<import("../result.js").Result<{message:string}, {done:boolean, scanned:number}>>}
  */
-export const scan = async (head, state) => {
-  const cell = init(state.blockNumber)
+export const scan = async blockNumber => {
+  const cell = init(blockNumber)
+  const state = await cell.read({
+    blockNumber,
+    lastId: "",
+    startTime: Date.now(),
+    updateTime: Date.now(),
+    endTime: null,
+  })
+  // Set update time
   await cell.write({ ...state, updateTime: Date.now() })
 
   try {
@@ -68,18 +76,26 @@ export const scan = async (head, state) => {
         await cell.write({ ...state, updateTime: Date.now(), lastId: token.id })
       }
 
-      // If less than requested number of tokens was returned and we're not
-      // scanning the last block then we have exhasted this block.
-      if (result.value.tokens.length < PAGE_SIZE && state.blockNumber < head) {
-        await cell.update(state => ({ ...state, endTime: Date.now() }))
-      }
-      // Otherwise we just mark cursor idle and exit.
-      else {
-        await cell.update(state => ({ ...state, updateTime: 0 }))
-      }
+      // If less than requested number of tokens was returned we indexed the
+      // whole block otherwise we reached the limit.
+      const done = result.value.tokens.length < PAGE_SIZE
+      await cell.update(state => ({
+        ...state,
+        // If done update `endTime` otherwise set `updateTime` to `0` to mark
+        // task idle.
+        ...(done ? { endTime: Date.now() } : { updateTime: 0 }),
+      }))
+
+      return { ok: true, value: { done, scanned: result.value.tokens.length } }
+    } else {
+      throw new Error(result.error.map(error => error.message).join("\n"))
     }
   } catch (error) {
+    // If error occured we updateTime to -1 to mark task errored. (We do not
+    // really treat errored tasks different from idle tasks however we set
+    // updateTime to -1 instead of 0 so we could distinguish between them)
     await cell.update(cursor => ({ ...cursor, updateTime: -1 }))
+    return { ok: false, error: { message: error.message } }
   }
 }
 
@@ -91,41 +107,14 @@ export const init = blockNumber =>
   new Cell(scanState, `eip-721:block:${blockNumber}`)
 
 /**
- * @param {number} lastBlock - last known block number
- * @param {Scan.State} state
- */
-
-export const resume = (lastBlock, state) => scan(lastBlock, state)
-
-/**
- * @param {number} lastBlock - Last known block number
- * @param {number} blockNumber - Block number to scan
- */
-export const start = (lastBlock, blockNumber) =>
-  scan(lastBlock, {
-    blockNumber,
-    lastId: "",
-    startTime: Date.now(),
-    updateTime: Date.now(),
-    endTime: null,
-  })
-
-/**
  * @param {FetchEvent} event
  * @param {Record<string, string>} params
  */
 export const request = async ({ request }, params) => {
   try {
     const blockNumber = Number(params["blockNumber"])
-    const { lastBlock } = await request.json()
-    const cell = init(blockNumber)
-    const state = await cell.read(null)
-    if (state == null) {
-      await start(lastBlock, blockNumber)
-    } else {
-      await resume(lastBlock, state)
-    }
-    return new JSONResponse({ ok: true, value: undefined })
+    const result = await scan(blockNumber)
+    return new JSONResponse(result)
   } catch (error) {
     return new JSONResponse({ ok: false, error: { message: error.message } })
   }

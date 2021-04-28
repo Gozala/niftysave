@@ -2,7 +2,7 @@
   "name": "@niftysave/chainnft",
   "version": "0.0.0",
   "description": "Worker that scrapes NFT data from chain",
-  "main": "main.js",
+  "main": "./src/main.js",
   "type": "module",
   "scripts": {
     "test": "mocha *.spec.js",
