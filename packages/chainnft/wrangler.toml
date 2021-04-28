@@ -4,7 +4,7 @@ type = "webpack"
 workers_dev = true
 route = ""
 zone_id = ""
-vars = { DEBUG = true, WORKER_POOL_SIZE = "10", LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
+vars = { DEBUG = true, WORKER_POOL_SIZE = "2", LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
 kv_namespaces = [ 
   { binding = "SCAN_STATE", preview_id = "8ace847a8d494baf8071864c54cd151e", id = "20f8c10eaafb4e4090ac2d9d6ab6df99" },
   { binding = "SCAN_TABLE", preview_id = "f8c9853efb184c06af69212943287afb", id = "4d8ac6f5521941e59fcaf5439aef5ee1" }

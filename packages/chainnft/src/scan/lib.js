@@ -1,3 +1,5 @@
+// @ts-ignore
+import * as _console from "../console.js"
 import * as Scan from "./scan.js"
 import { Cell } from "../util/cell.js"
 import { PAGE_SIZE, scanState, scanTable } from "../env.js"
@@ -8,7 +10,7 @@ const MIN = 1000 * 60
 
 /**
  * Returns status of the scan. If no updates were reported with-in
- * last 30mins it is considered `'idle'`. Otherwise it is `'complete'` if
+ * last minute it is considered `'idle'`. Otherwise it is `'complete'` if
  * `endTime` is set and `'active'` if not.
  *
  * @param {Scan.State} state
@@ -16,7 +18,7 @@ const MIN = 1000 * 60
 export const status = state => {
   if (state.endTime !== null) {
     return "complete"
-  } else if (Date.now() - state.updateTime < 30 * MIN) {
+  } else if (Date.now() - state.updateTime < MIN) {
     return "active"
   } else {
     return "idle"
@@ -28,6 +30,7 @@ export const status = state => {
  * @returns {Promise<import("../result.js").Result<{message:string}, {done:boolean, scanned:number}>>}
  */
 export const scan = async blockNumber => {
+  console.log(`Scanner: received scan request for block #${blockNumber}`)
   const cell = init(blockNumber)
   const state = await cell.read({
     blockNumber,
