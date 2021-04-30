@@ -23,13 +23,26 @@ const client = createClient({
 
 /**
  * @param {schema.QueryRequest} query
- * @returns {Promise<result.Result<readonly import('graphql').GraphQLError[], schema.Query>>}
+ * @returns {Promise<result.Result<QueryError, schema.Query>>}
  */
 export const query = async query => {
   const result = await client.query(query)
   if (result.data) {
     return { ok: true, value: result.data }
   } else {
-    return { ok: false, error: result.errors || [] }
+    return { ok: false, error: new QueryError(result.errors || []) }
+  }
+}
+
+export class QueryError extends Error {
+  /**
+   * @param {readonly import('graphql').GraphQLError[]} errors
+   */
+  constructor(errors) {
+    super()
+    this.errors = errors
+  }
+  get message() {
+    return this.errors.map(String).join("\n")
   }
 }

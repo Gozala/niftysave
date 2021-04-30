@@ -1,6 +1,4 @@
-export type Result<X, T> =
-  | Failure<X>
-  | Success<T>
+export type Result<X, T> = Failure<X> | Success<T>
 
 export interface Failure<X> {
   ok: false
@@ -8,6 +6,6 @@ export interface Failure<X> {
 }
 
 export interface Success<T> {
-  ok: true,
+  ok: true
   value: T
 }

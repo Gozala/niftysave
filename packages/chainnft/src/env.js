@@ -1,10 +1,10 @@
-export const scanState = SCAN_STATE
-export const scanTable = SCAN_TABLE
-export const PAGE_SIZE = 100
+export const cursorStore = EIP721_CURSOR
+export const tokenStore = EIP721_TOKENS
+export const scanStore = EIP721_SCAN
+export const pageSize = Number(PAGE_SIZE)
+export const timeBudget = Number(TIME_BUDGET)
 
-// as per https://github.com/nftstorage/eip721-subgraph/blob/5d0163c5de04fc3deb1c4e5f33c2c33ae6e71adf/subgraph.yaml#L12
-export const START_BLOCK = 5806610
 export const isDebug = DEBUG === "true"
-export const POOL_SIZE = WORKER_POOL_SIZE
+export const poolSize = Number(WORKER_POOL_SIZE)
 
 export const location = new URL(LOCATION)

@@ -2,6 +2,7 @@
 import * as _console from "../console.js"
 import * as Scan from "./scan.js"
 import { Cell } from "../util/cell.js"
+import * as Table from "../util/table.js"
 import { PAGE_SIZE, scanState, scanTable } from "../env.js"
 import * as EIP721 from "../eip721.js"
 import { JSONResponse } from "../util/response.js"

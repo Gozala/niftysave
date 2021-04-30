@@ -4,16 +4,21 @@ type = "webpack"
 workers_dev = true
 route = ""
 zone_id = ""
-vars = { DEBUG = true, WORKER_POOL_SIZE = "2", LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
+vars = { DEBUG = true, TIME_BUDGET=60000, PAGE_SIZE=100, WORKER_POOL_SIZE = 1, LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
 kv_namespaces = [ 
-  { binding = "SCAN_STATE", preview_id = "8ace847a8d494baf8071864c54cd151e", id = "20f8c10eaafb4e4090ac2d9d6ab6df99" },
-  { binding = "SCAN_TABLE", preview_id = "f8c9853efb184c06af69212943287afb", id = "4d8ac6f5521941e59fcaf5439aef5ee1" }
+  { binding = "EIP721_TOKENS", id = "5ee25386f7a94d399a2fb31ae86a1eb2", preview_id = "d8f47f6802ec43edba4264191b2c71dc" },
+  { binding = "EIP721_CURSOR", id = "1ed9f60450a848058b7c741996a43398", preview_id = "90f20b9d3f9945d3bd3f847784ae6f2b" },
+  { binding = "EIP721_SCAN", id = "a3de3c4d66c5474190824c15e61758a5", preview_id = "cec530f48d294338982a57d344918cdd" }
 ]
+
+[triggers]
+crons = ["* * * * *"]
 
 [env.staging]
 name = "nftysave-chainnft-staging"
-vars = { DEBUG = true, WORKER_POOL_SIZE = "10" }
-kv_namespaces = [ 
-  { binding = "SCAN_STATE", preview_id = "88fdd4d3436747359ead57582476028f", id = "20f8c10eaafb4e4090ac2d9d6ab6df99" },
-  { binding = "SCAN_TABLE", preview_id = "ea05e5b6c5454cefac1beeeca1e80abc", id = "4d8ac6f5521941e59fcaf5439aef5ee1" }
+vars = { DEBUG = true, TIME_BUDGET=60000, PAGE_SIZE=100, WORKER_POOL_SIZE = 1, LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
+kv_namespaces = [
+  { binding = "EIP721_TOKENS", id = "6ac60cf8ac0f46868af62f5267bfbfea", preview_id = "d8f47f6802ec43edba4264191b2c71dc" },
+  { binding = "EIP721_CURSOR", id = "1f5051378a3f46f49ad26b1823c58bea", preview_id = "90f20b9d3f9945d3bd3f847784ae6f2b" },
+  { binding = "EIP721_SCAN", id = "04941ab39b194a3f9b3f480010a0fd9b", preview_id = "cec530f48d294338982a57d344918cdd" }
 ]
