@@ -15,14 +15,14 @@ import { JSONResponse } from "./util/response.js"
 
 export { State }
 
-export const cursor = Cell.init(cursorStore, "id", "")
+export const cursor = Cell.init(cursorStore, "id", 0)
 
 export const nfts = Table.init(
   tokenStore,
   /**
    * @param {EIP721.schema.Token} token
    */
-  token => token.id
+  token => token.tokenID
 )
 
 export const scanTable = Table.init(scanStore, State.stateKey)
@@ -38,7 +38,7 @@ const fetchTokens = ({ id, searchSize }) =>
         orderDirection: EIP721.schema.OrderDirection.asc,
         where: {
           tokenURI_not: "",
-          id_gt: id,
+          tokenID_gt: id,
         },
       },
       {
@@ -66,7 +66,7 @@ const fetchTokens = ({ id, searchSize }) =>
  *
  * @param {State.Scanner.State} state
  * @param {Cell.Cell<State.Scanner.State>} cell
- * @returns {Promise<Result.Result<Error, string>>}
+ * @returns {Promise<Result.Result<Error, number>>}
  */
 const start = async (state, cell) => {
   await Cell.update(cell, State.updateTime)
@@ -83,7 +83,7 @@ const start = async (state, cell) => {
       const result = await Table.put(nfts, token)
       // If store succeeded continue to next one
       if (result.ok) {
-        next = token.id
+        next = token.tokenID
         count++
       } else {
         // if failed to write any tokens update task state to failed,
@@ -118,7 +118,7 @@ const start = async (state, cell) => {
  *
  * @param {State.Scanner.State} state
  * @param {Cell.Cell<State.Scanner.State>} cell
- * @returns {Promise<Result.Result<Error, string>>}
+ * @returns {Promise<Result.Result<Error, number>>}
  */
 const resume = async (state, cell) => {
   // If existing scan is completed succesfully just return new cursor
@@ -146,7 +146,7 @@ const resume = async (state, cell) => {
 
 /**
  * @param {number} deadline
- * @returns {Promise<Result.Result<Error, string>>}
+ * @returns {Promise<Result.Result<Error, number>>}
  */
 const scan = async deadline => {
   const result = await Cell.read(cursor)
@@ -186,9 +186,7 @@ const scan = async deadline => {
  * @param {number} deadline - Unix timestamp.
  */
 export const activate = async deadline => {
-  console.log("START CRON JOB")
   const result = await scan(deadline)
-  console.log("FINISHED JOB")
   if (!result.ok) {
     throw result.error
   }

@@ -36,11 +36,15 @@ const info = async () => {
   const cursor = await Cell.read(Scanner.cursor)
   const indexedNFTS = await Table.count(Scanner.nfts)
 
-  let [succeeded, failed, pending] = [0, 0, 0]
+  let [succeeded, failed, active, idle] = [0, 0, 0, 0]
 
   for await (const state of Table.iterate(Scanner.scanTable)) {
     if (!state.done) {
-      pending++
+      if (timeBudget - (Date.now() - state.updateTime) > 0) {
+        active++
+      } else {
+        idle++
+      }
     } else if (state.result.ok) {
       succeeded++
     } else {
@@ -57,7 +61,8 @@ const info = async () => {
     tasks: {
       succeeded,
       failed,
-      pending,
+      active,
+      idle,
     },
   })
 }

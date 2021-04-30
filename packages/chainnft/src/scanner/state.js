@@ -48,7 +48,7 @@ export const fail = (state, reason) => ({
 /**
  *
  * @param {Scanner.State} state
- * @param {string} next
+ * @param {number} next
  * @param {number} count
  * @returns {Scanner.State}
  */
