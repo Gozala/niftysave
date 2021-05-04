@@ -1,7 +1,6 @@
 import { Router, cors, postCors } from "@niftysave/router"
 import * as EIP721 from "./eip721.js"
 import * as Cell from "./util/cell.js"
-import * as Store from "./util/store.js"
 import * as Table from "./util/table.js"
 import * as Scanner from "./scanner.js"
 import { poolSize, timeBudget, location } from "./env.js"

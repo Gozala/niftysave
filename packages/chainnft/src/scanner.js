@@ -34,8 +34,6 @@ const fetchTokens = ({ id, searchSize }) =>
     tokens: [
       {
         first: searchSize,
-        orderBy: EIP721.schema.Token_orderBy.blockNumber,
-        orderDirection: EIP721.schema.OrderDirection.asc,
         where: {
           tokenURI_not: "",
           tokenID_gt: id,

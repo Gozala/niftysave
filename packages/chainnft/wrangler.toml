@@ -5,10 +5,10 @@ workers_dev = true
 route = ""
 zone_id = ""
 vars = { DEBUG = true, TIME_BUDGET=60000, PAGE_SIZE=100, WORKER_POOL_SIZE = 1, LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
-kv_namespaces = [ 
-  { binding = "EIP721_TOKENS", id = "fcaab981736443c5b21957dfc0af5617", preview_id = "433cd69af9f8468d9dabe34bd2377187" },
-  { binding = "EIP721_CURSOR", id = "1ed9f60450a848058b7c741996a43398", preview_id = "90f20b9d3f9945d3bd3f847784ae6f2b" },
-  { binding = "EIP721_SCAN", id = "8bfdc339657d4c578043f7d7f2d1f909", preview_id = "e9ef5c66cee84858995d62f488a534dd" }
+kv_namespaces = [
+  { binding = "EIP721_TOKENS", id = "4449b93c55dd48ae9c40397b4cd0e811", preview_id = "00c627aa820a480798ce0ce53da6018f" },
+  { binding = "EIP721_CURSOR", id = "8d204fd986be42f982fbe423e2a5c5db", preview_id = "0858bca31e7440dea6bcb654214b172e" },
+  { binding = "EIP721_SCAN", id = "f25283a4ea3a47738012973af5602aa9", preview_id = "906afa11933748d0b1ff006342a99ad4" }
 ]
 
 [triggers]
