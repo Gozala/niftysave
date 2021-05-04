@@ -1,5 +1,4 @@
 import { Router, cors, postCors } from "@niftysave/router"
-import * as EIP721 from "./eip721.js"
 import * as Cell from "./util/cell.js"
 import * as Table from "./util/table.js"
 import * as Scanner from "./scanner.js"
@@ -31,8 +30,7 @@ const router = new Router({
  * @returns {Promise<Response>}
  */
 const info = async () => {
-  const head = await queryHead()
-  const cursor = await Cell.read(Scanner.cursor)
+  const cursor = await Cell.read(Scanner.cursorCell)
   const indexedNFTS = await Table.count(Scanner.nfts)
 
   let [succeeded, failed, active, idle] = [0, 0, 0, 0]
@@ -64,30 +62,6 @@ const info = async () => {
       idle,
     },
   })
-}
-
-/**
- * Queries the graph to get last block number in the chain. In practice it
- * returns not the last block number but one prior to it as graph may not be
- * finished indexing the last on (I don't actually know if this is actualy true
- * can't see any info on this in their docs, so just assume the worst).
- *
- * @returns {Promise<number>}
- */
-const queryHead = async () => {
-  const result = await EIP721.query({
-    _meta: {
-      block: {
-        number: 1,
-      },
-    },
-  })
-
-  if (result.ok && result.value._meta) {
-    return result.value._meta.block.number - 1
-  } else {
-    throw Error("Failed to fetch head")
-  }
 }
 
 router.add("options", "/api/*", cors)

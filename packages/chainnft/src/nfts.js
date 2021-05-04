@@ -35,8 +35,6 @@ export const fetch = async _event => {
   if (result.ok) {
     return JSONResponse.ok(result.value.tokens)
   } else {
-    return JSONResponse.error(
-      new Error(result.error.map(error => error.message).join())
-    )
+    return JSONResponse.error(result.error)
   }
 }

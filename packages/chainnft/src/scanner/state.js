@@ -16,9 +16,9 @@ export const isActive = state =>
  * @param {Scanner.Options} options
  * @returns {Scanner.State}
  */
-export const init = ({ id, searchSize }) => ({
+export const init = ({ cursor, searchSize }) => ({
   done: false,
-  id,
+  cursor,
   searchSize,
   attempt: 1,
   startTime: Date.now(),
@@ -46,17 +46,16 @@ export const fail = (state, reason) => ({
 })
 
 /**
- *
- * @param {Scanner.State} state
- * @param {number} next
- * @param {number} count
+ * @param {Scanner.State} state - Stat of the scraper
+ * @param {string} cursor - cursor to continue from next
+ * @param {number} added - number of tokens added
  * @returns {Scanner.State}
  */
-export const succeed = (state, next, count) => ({
+export const succeed = (state, cursor, added) => ({
   ...state,
   done: true,
   updateTime: Date.now(),
-  result: { ok: true, value: { next, n: count } },
+  result: { ok: true, value: { cursor, added } },
 })
 
 /**
@@ -64,24 +63,11 @@ export const succeed = (state, next, count) => ({
  * @param {Scanner.State} state
  * @returns {Scanner.State}
  */
-export const retry = ({ id, searchSize, attempt }) => ({
+export const retry = ({ cursor, searchSize, attempt }) => ({
   done: false,
-  id,
+  cursor,
   searchSize,
   attempt: attempt + 1,
   startTime: Date.now(),
   updateTime: Date.now(),
 })
-
-/**
- *
- * @param {Scanner.State} state
- * @returns {string}
- */
-export const stateKey = ({ id, attempt }) => `eip-721:${id}`
-
-/**
- * @param {Scanner.State} param0
- * @returns {string}
- */
-export const tokenKey = ({ id }) => `eip-721:${id}`

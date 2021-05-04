@@ -15,7 +15,7 @@ import { JSONResponse } from "./util/response.js"
 
 export { State }
 
-export const cursor = Cell.init(cursorStore, "id", 0)
+export const cursorCell = Cell.init(cursorStore, "id", "")
 
 export const nfts = Table.init(
   tokenStore,
@@ -25,18 +25,24 @@ export const nfts = Table.init(
   token => token.tokenID
 )
 
-export const scanTable = Table.init(scanStore, State.stateKey)
+export const scanTable = Table.init(
+  scanStore,
+  /**
+   * @param {State.Scanner.State} state
+   */
+  ({ cursor }) => `eip-721:${cursor}`
+)
 /**
  * @param {State.Scanner.Options} options
  */
-const fetchTokens = ({ id, searchSize }) =>
+const fetchTokens = ({ cursor, searchSize }) =>
   EIP721.query({
     tokens: [
       {
         first: searchSize,
         where: {
           tokenURI_not: "",
-          tokenID_gt: id,
+          id_gt: cursor,
         },
       },
       {
@@ -64,7 +70,7 @@ const fetchTokens = ({ id, searchSize }) =>
  *
  * @param {State.Scanner.State} state
  * @param {Cell.Cell<State.Scanner.State>} cell
- * @returns {Promise<Result.Result<Error, number>>}
+ * @returns {Promise<Result.Result<Error, State.Scanner.ScanDetails>>}
  */
 const start = async (state, cell) => {
   await Cell.update(cell, State.updateTime)
@@ -75,25 +81,25 @@ const start = async (state, cell) => {
   // if success update time and store all the tokens
   if (result.ok) {
     await Cell.update(cell, State.updateTime)
-    let next = state.id
-    let count = 0
+    let cursor = state.cursor
+    let added = 0
     for (const token of result.value.tokens) {
-      const result = await Table.put(nfts, token)
+      const put = await Table.put(nfts, token)
       // If store succeeded continue to next one
-      if (result.ok) {
-        next = token.tokenID
-        count++
+      if (put.ok) {
+        cursor = token.id
+        added++
       } else {
         // if failed to write any tokens update task state to failed,
         // othrewise mark task as success with number of nfts it stored
         const update =
-          count === 0
-            ? await Cell.update(cell, s => State.fail(s, String(result.error)))
-            : await Cell.update(cell, s => State.succeed(s, next, count))
+          added === 0
+            ? await Cell.update(cell, s => State.fail(s, String(put.error)))
+            : await Cell.update(cell, s => State.succeed(s, cursor, added))
 
         // If update failed give and return result otherwise break the loop
-        if (!result.ok) {
-          return result
+        if (!update.ok) {
+          return update
         } else {
           break
         }
@@ -101,11 +107,11 @@ const start = async (state, cell) => {
     }
 
     // if some nfts were saved write last token id into a cursor
-    await Cell.update(cell, s => State.succeed(s, next, count))
-    if (count > 0) {
-      await Cell.write(cursor, next)
+    await Cell.update(cell, s => State.succeed(s, cursor, added))
+    if (added > 0) {
+      await Cell.write(cursorCell, cursor)
     }
-    return { ok: true, value: next }
+    return { ok: true, value: { cursor, added } }
   } else {
     return result
   }
@@ -116,14 +122,14 @@ const start = async (state, cell) => {
  *
  * @param {State.Scanner.State} state
  * @param {Cell.Cell<State.Scanner.State>} cell
- * @returns {Promise<Result.Result<Error, number>>}
+ * @returns {Promise<Result.Result<Error, State.Scanner.ScanDetails>>}
  */
 const resume = async (state, cell) => {
   // If existing scan is completed succesfully just return new cursor
   // otherwise start a retry a scan again.
   if (state.done) {
     if (state.result.ok) {
-      return { ok: true, value: state.result.value.next }
+      return { ok: true, value: state.result.value }
     } else {
       return await start(State.retry(state), cell)
     }
@@ -135,7 +141,7 @@ const resume = async (state, cell) => {
     const time = timeBudget - (Date.now() - state.updateTime)
     if (time > 0) {
       await new Promise(resolve => setTimeout(resolve, time))
-      return { ok: true, value: state.id }
+      return { ok: true, value: { cursor: state.cursor, added: 0 } }
     } else {
       return await start(State.retry(state), cell)
     }
@@ -144,17 +150,18 @@ const resume = async (state, cell) => {
 
 /**
  * @param {number} deadline
- * @returns {Promise<Result.Result<Error, number>>}
+ * @returns {Promise<Result.Result<Error, State.Scanner.ScanDetails>>}
  */
 const scan = async deadline => {
-  const result = await Cell.read(cursor)
+  const result = await Cell.read(cursorCell)
   if (!result.ok) {
     return result
   }
-  let id = result.value
+  let cursor = result.value
+  let added = 0
 
   while (deadline - Date.now() > 0) {
-    const init = State.init({ id, searchSize: pageSize })
+    const init = State.init({ cursor, searchSize: pageSize })
     const cell = Table.cell(scanTable, init)
     const read = await Cell.read(cell)
     if (!read.ok) {
@@ -169,15 +176,16 @@ const scan = async deadline => {
       return result
     }
 
-    const next = result.value
-    if (id === next) {
+    added += result.value.added
+
+    if (cursor === result.value.cursor) {
       break
     } else {
-      id = next
+      cursor = result.value.cursor
     }
   }
 
-  return { ok: true, value: id }
+  return { ok: true, value: { cursor, added } }
 }
 
 /**

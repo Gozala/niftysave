@@ -88,6 +88,8 @@
 , "worker"  ],
   "exclude": [
     "node_modules",
-    "./generated"
+    "./generated",
+    "./dist",
+    "./worker"
   ]
 }

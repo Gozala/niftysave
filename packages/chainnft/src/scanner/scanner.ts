@@ -1,7 +1,7 @@
 import { Result } from "../result"
 
 export interface Options {
-  id: number
+  cursor: string
   searchSize: number
 }
 
@@ -9,7 +9,7 @@ export interface Data {
   /**
    * ID scan started from
    */
-  id: number
+  cursor: string
 
   /**
    * Number of tokens requested.
@@ -36,9 +36,14 @@ export interface Pending extends Data {
   done: false
 }
 
+export interface ScanDetails {
+  cursor: string
+  added: number
+}
+
 export interface Done extends Data {
   done: true
-  result: Result<string, { next: number; n: number }>
+  result: Result<string, ScanDetails>
 }
 
 export type State = Pending | Done
