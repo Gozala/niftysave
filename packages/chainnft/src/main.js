@@ -51,6 +51,7 @@ const info = async () => {
 
   return new JSONResponse({
     url: location.href,
+    revision: 1,
     poolSize,
     timeBudget,
     cursor: cursor.ok ? cursor.value : "",
