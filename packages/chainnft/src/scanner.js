@@ -22,7 +22,7 @@ export const nfts = Table.init(
   /**
    * @param {EIP721.schema.Token} token
    */
-  token => token.tokenID
+  token => token.id
 )
 
 export const scanTable = Table.init(

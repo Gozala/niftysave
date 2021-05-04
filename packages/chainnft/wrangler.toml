@@ -6,9 +6,9 @@ route = ""
 zone_id = ""
 vars = { DEBUG = true, TIME_BUDGET=60000, PAGE_SIZE=100, WORKER_POOL_SIZE = 1, LOCATION = "https://nftysave-chainnft-dev.protocol-labs.workers.dev/" }
 kv_namespaces = [
-  { binding = "EIP721_TOKENS", id = "ab00ecd632264dd99e8123f329c9d330", preview_id = "00c627aa820a480798ce0ce53da6018f" },
-  { binding = "EIP721_CURSOR", id = "9339efcee8674aaa9e0da6870814897b", preview_id = "0858bca31e7440dea6bcb654214b172e" },
-  { binding = "EIP721_SCAN", id = "5292a9c50a6844c794f52906f06ee8da", preview_id = "906afa11933748d0b1ff006342a99ad4" }
+  { binding = "EIP721_TOKENS", id = "4eb7392f725a4e42943bcf822af27c67", preview_id = "00c627aa820a480798ce0ce53da6018f" },
+  { binding = "EIP721_CURSOR", id = "68d05cbb5297404eba85090c36610911", preview_id = "0858bca31e7440dea6bcb654214b172e" },
+  { binding = "EIP721_SCAN", id = "6f533016e2ce4986ad98237c61cb40cb", preview_id = "906afa11933748d0b1ff006342a99ad4" }
 ]
 
 [triggers]
