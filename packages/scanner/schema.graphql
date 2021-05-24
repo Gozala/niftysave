@@ -1,0 +1,240 @@
+type Block {
+  """
+  The hash of the block
+  """
+  hash: ID! @unique
+
+  """
+  The block number
+  """
+  number: Long! @unique
+
+  tokens: [Token!] @relation
+}
+
+type Token {
+  id: String! @unique
+
+  tokenID: String!
+  mintTime: String!
+  """
+  Present when ERC721Metadata interface is implemented.
+  """
+  tokenAsset: TokenAsset
+
+  contract: TokenContract! @relation
+  owner: Owner! @relation
+  blocks: [Block!] @relation
+
+  imported: [ERC721ImportResult!] @relation
+}
+
+type TokenAsset {
+  """
+  Multiple tokens may have use a same `tokenURI`. This relation allows tracking
+  which tokens refer to the same `tokenURI`.
+  Token this metadata belogs to.
+  """
+  referrers: [Token!] @relation(name: "tokenAsset_referrers")
+
+  tokenURI: String! @unique
+
+  """
+  When `tokenURI` points to may point to JSON file that conforms to the ERC721
+  Metadata JSON Schema it fetched parsed and stored as related Metadata
+  document.
+  """
+  metadata: Metadata @relation
+
+  """
+  CID of an IPLD node that encapsulates token metadata and all it's assets.
+  Present when it was passibly to succesfully pin the token.
+  """
+  ipnft: String
+}
+
+"""
+Describen an operation that may fail, like an HTTP
+request or a JSON parse.
+
+Fauna does not support union types so we get by using a
+single struct represeting union:
+type Task =
+  | { status: 'idle', attempt: int }
+  | { status: 'queued' attempt: int }
+  | { status: 'pending', start: Time, attempt: int }
+  | { status: 'failed', end: Time, error: String, attempt: int }
+  | { status: 'done', end: Time, attempt: int }
+"""
+type Task {
+  """
+  Status of the task
+  """
+  status: String!
+
+  """
+  An attempt number. Usuallly 1, but could be greater
+  on retries
+  """
+  attempt: Int!
+
+  """
+  Time at which task started
+  """
+  start: Time
+  """
+  Time at which task failed
+  """
+  end: Time
+  """
+  Error message in cas task failed
+  """
+  error: String
+}
+
+type Metadata {
+  referrers: [TokenAsset!]!
+
+  """
+  Identifies the asset this token represents
+  """
+  name: String!
+  """
+  Describes the asset this token represents
+  """
+  description: String!
+  """
+  A file representing the asset this token represents
+  """
+  image: Resource!
+
+  # """
+  # Additional assets that token linked to
+  # """
+  assets: [Resource!] @relation
+}
+
+type Resource {
+  referrers: [Metadata!] @relation
+
+  """
+  URI with which resource was identified.
+  """
+  uri: String! @unique
+  """
+  CID that corresponds to this resource. It may be set when
+  URL is parsed or it may be set when content is fetched and
+  pinned.
+  """
+  cid: String @index
+
+  pin: Task! @relation
+}
+
+type Owner {
+  id: ID! @unique
+}
+
+type TokenContract {
+  id: ID! @unique
+  """
+  A descriptive name for a collection of NFTs in this contract
+  """
+  name: String
+  """
+  An abbreviated name for NFTs in this contract
+  """
+  symbol: String
+
+  supportsEIP721Metadata: Boolean!
+
+  tokens: [Token!] @relation
+}
+
+input ERC721MetadataQuery {
+  name: String
+  symbol: String
+  tokenURI: String
+  ipnft: String
+}
+
+input MetadaQuery {
+  name: String
+  description: String
+  image: ResourceQuery
+}
+
+input ResourceQuery {
+  uri: String
+  cid: String
+}
+
+type Cursor {
+  id: String!
+}
+
+type ERC721ImportResult {
+  """
+  Cursor from which import started.
+  """
+  id: String!
+  """
+  New cursor after this import.
+  """
+  nextID: String!
+  """
+  Tokens that were imported.
+  """
+  tokens: [Token!]! @relation
+}
+
+input ERC721ImportInput {
+  """
+  Cursor from which import started. If current cursor changed import will be
+  rejected.
+  """
+  id: String!
+  """
+  Tokens to be imported.
+  """
+  tokens: [ERC721ImportTokenInput!]!
+}
+
+input ERC721ImportTokenInput {
+  id: ID!
+  tokenID: String!
+  tokenURI: String!
+  mintTime: String!
+
+  blockHash: String!
+  blockNumber: String!
+
+  contract: ERC721ImportTokenContractInput!
+  owner: ERC721ImportTokenOwnerInput!
+}
+
+input ERC721ImportTokenContractInput {
+  id: ID!
+  name: String
+  symbol: String
+  supportsEIP721Metadata: Boolean!
+}
+
+input ERC721ImportTokenOwnerInput {
+  id: ID!
+}
+
+type Query {
+  cursor: Cursor! @resolver
+  tokens(tokenID: String, mintTime: String): [Token]!
+  allTokens: [Token!]
+  owner(id: ID): Owner
+  block(hash: ID, number: Long): Block
+  constract(id: ID): TokenContract
+
+  allImports: [ERC721ImportResult!] @relation
+}
+
+type Mutation {
+  importERC721(input: ERC721ImportInput!): ERC721ImportResult! @resolver
+}
