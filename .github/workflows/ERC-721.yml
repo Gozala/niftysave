@@ -8,9 +8,6 @@ jobs:
   erc-7212:
     name: Scrape ERC-721
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: ["staging", "production"]
     steps:
       - uses: actions/checkout@v2
 
@@ -24,8 +21,6 @@ jobs:
 
       - name: Run job
         env:
-          DEBUG: "*"
-          ENV: ${{ matrix.env }}
           FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
           BATCH_SIZE: 100
           TIME_BUDGET: 1620
