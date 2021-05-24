@@ -1,8 +1,8 @@
+name: ERC721
+
 on:
   schedule:
-  - cron: */30 * * * *
-  workflow_dispatch
-name: ERC721
+    - cron: "*/30 * * * *"
 
 jobs:
   erc-7212:
