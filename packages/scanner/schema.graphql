@@ -51,6 +51,11 @@ type TokenAsset {
   Present when it was passibly to succesfully pin the token.
   """
   ipnft: String
+
+  """
+  Problem description if failed to get the metadata.
+  """
+  problem: String
 }
 
 """
@@ -224,6 +229,16 @@ input ERC721ImportTokenOwnerInput {
   id: ID!
 }
 
+enum TokenAssetStatus {
+  Queued
+  Failed
+  Succeeded
+}
+
+input FindTokenAssetsInput {
+  status: TokenAssetStatus
+}
+
 type Query {
   cursor: Cursor! @resolver
   tokens(tokenID: String, mintTime: String): [Token]!
@@ -233,6 +248,12 @@ type Query {
   constract(id: ID): TokenContract
 
   allImports: [ERC721ImportResult!] @relation
+  """
+  Provides tokens with the
+  """
+  findTokenAssets(where: FindTokenAssetsInput): [TokenAsset!]
+    @resolver(paginated: true)
+    @relation
 }
 
 type Mutation {
