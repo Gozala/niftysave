@@ -5,14 +5,14 @@ export { Result }
 /**
  * @template T
  * @param {T} value
- * @returns {Result.Result<any, T>}
+ * @returns {Result.Success<T>}
  */
 export const ok = value => ({ value, ok: true })
 
 /**
  * @template X
  * @param {X} error
- * @returns {Result.Result<X, any>}
+ * @returns {Result.Failure<X>}
  */
 export const error = error => ({ error, ok: false })
 

@@ -162,6 +162,7 @@ export interface TokenAsset {
 export interface Metadata {
   /** Identifies the asset this token represents */
   name: String
+  source: TokenAsset
   assets: ResourcePage
   /** A file representing the asset this token represents */
   image: Resource
@@ -169,7 +170,6 @@ export interface Metadata {
   description: String
   /** The document's ID. */
   _id: ID
-  referrers: TokenAsset[]
   /** The document's timestamp. */
   _ts: Long
   __typename: 'Metadata'
@@ -187,6 +187,8 @@ export interface ResourcePage {
 }
 
 export interface Resource {
+  /** Problem description if there was problem in pinning a resource. */
+  problem: String | null
   /** The document's ID. */
   _id: ID
   /** URI with which resource was identified. */
@@ -197,11 +199,90 @@ export interface Resource {
    * pinned.
    */
   cid: String | null
-  pin: Task
+  status: ResourceStatus
   referrers: MetadataPage
   /** The document's timestamp. */
   _ts: Long
   __typename: 'Resource'
+}
+
+export enum ResourceStatus {
+  /** Has not been processed yet */
+  Idle = 'Idle',
+  /**
+   * Pin request started. This usually implies that we found a CID in the
+   * tokenURI (because it was a gateway URL) so we started a pin but do not
+   * know if it was possible to fetch content.
+   */
+  PinQueued = 'PinQueued',
+  /** Was pinned succesfully */
+  Pinned = 'Pinned',
+  /** tokenURI is either malformed or the protocol is not supported. */
+  FailedURIParse = 'FailedURIParse',
+  /** Was unable to fetch the content. */
+  FailedFetch = 'FailedFetch',
+  /**
+   * Pin request failed, can happen when pinned by CID but correspoding content
+   * is not on the network.
+   */
+  PinFailure = 'PinFailure',
+}
+
+/** The pagination object for elements of type 'Metadata'. */
+export interface MetadataPage {
+  /** The elements of type 'Metadata' in this page. */
+  data: (Metadata | null)[]
+  /** A cursor for elements coming after the current page. */
+  after: String | null
+  /** A cursor for elements coming before the current page. */
+  before: String | null
+  __typename: 'MetadataPage'
+}
+
+export interface TokenContract {
+  /** A descriptive name for a collection of NFTs in this contract */
+  name: String | null
+  /** The document's ID. */
+  _id: ID
+  /** An abbreviated name for NFTs in this contract */
+  symbol: String | null
+  id: ID
+  supportsEIP721Metadata: Boolean
+  tokens: TokenPage
+  /** The document's timestamp. */
+  _ts: Long
+  __typename: 'TokenContract'
+}
+
+/** The `Boolean` scalar type represents `true` or `false`. */
+export type Boolean = boolean
+
+export enum TokenAssetStatus {
+  Idle = 'Idle',
+  FailedURIParse = 'FailedURIParse',
+  Queued = 'Queued',
+  Failed = 'Failed',
+  Succeeded = 'Succeeded',
+}
+
+/** The pagination object for elements of type 'TokenAsset'. */
+export interface QueryFindTokenAssetsPage {
+  /** The elements of type 'TokenAsset' in this page. */
+  data: (TokenAsset | null)[]
+  /** A cursor for elements coming after the current page. */
+  after: String | null
+  /** A cursor for elements coming before the current page. */
+  before: String | null
+  __typename: 'QueryFindTokenAssetsPage'
+}
+
+export interface Cursor {
+  /** The document's ID. */
+  _id: ID
+  /** The document's timestamp. */
+  _ts: Long
+  id: String
+  __typename: 'Cursor'
 }
 
 /**
@@ -240,61 +321,6 @@ export interface Task {
 
 export type Time = any
 
-/** The pagination object for elements of type 'Metadata'. */
-export interface MetadataPage {
-  /** The elements of type 'Metadata' in this page. */
-  data: (Metadata | null)[]
-  /** A cursor for elements coming after the current page. */
-  after: String | null
-  /** A cursor for elements coming before the current page. */
-  before: String | null
-  __typename: 'MetadataPage'
-}
-
-export interface TokenContract {
-  /** A descriptive name for a collection of NFTs in this contract */
-  name: String | null
-  /** The document's ID. */
-  _id: ID
-  /** An abbreviated name for NFTs in this contract */
-  symbol: String | null
-  id: ID
-  supportsEIP721Metadata: Boolean
-  tokens: TokenPage
-  /** The document's timestamp. */
-  _ts: Long
-  __typename: 'TokenContract'
-}
-
-/** The `Boolean` scalar type represents `true` or `false`. */
-export type Boolean = boolean
-
-export enum TokenAssetStatus {
-  Queued = 'Queued',
-  Failed = 'Failed',
-  Succeeded = 'Succeeded',
-}
-
-/** The pagination object for elements of type 'TokenAsset'. */
-export interface QueryFindTokenAssetsPage {
-  /** The elements of type 'TokenAsset' in this page. */
-  data: (TokenAsset | null)[]
-  /** A cursor for elements coming after the current page. */
-  after: String | null
-  /** A cursor for elements coming before the current page. */
-  before: String | null
-  __typename: 'QueryFindTokenAssetsPage'
-}
-
-export interface Cursor {
-  /** The document's ID. */
-  _id: ID
-  /** The document's timestamp. */
-  _ts: Long
-  id: String
-  __typename: 'Cursor'
-}
-
 export interface Mutation {
   /** Delete an existing document in the collection of 'Owner' */
   deleteOwner: Owner | null
@@ -308,6 +334,12 @@ export interface Mutation {
   updateTask: Task | null
   /** Create a new document in the collection of 'Block' */
   createBlock: Block
+  /**
+   * Imports Token Metadata. Will be rejected if corresponding asset status isn't
+   * Queued. Otherwise updates corresponding TokenAsset transitioning it to
+   * Succeeded state.
+   */
+  importTokenMetadata: Metadata
   /** Delete an existing document in the collection of 'ERC721ImportResult' */
   deleteERC721ImportResult: ERC721ImportResult | null
   /** Update an existing document in the collection of 'Metadata' */
@@ -355,6 +387,13 @@ export interface Mutation {
   deleteMetadata: Metadata | null
   /** Update an existing document in the collection of 'Block' */
   updateBlock: Block | null
+  /**
+   * Reports problem with a TokenAsset e.g. it was impossible to parse URI
+   * or was unable to fetch content from URI, or content was not a JSON.
+   *
+   * Call is rejected if status isn't Queued.
+   */
+  reportTokenAssetProblem: TokenAsset
   /** Update an existing document in the collection of 'ERC721ImportResult' */
   updateERC721ImportResult: ERC721ImportResult | null
   __typename: 'Mutation'
@@ -674,6 +713,7 @@ export interface TokenAssetRequest {
 export interface MetadataRequest {
   /** Identifies the asset this token represents */
   name?: boolean | number
+  source?: TokenAssetRequest
   assets?:
     | [
         {
@@ -691,7 +731,6 @@ export interface MetadataRequest {
   description?: boolean | number
   /** The document's ID. */
   _id?: boolean | number
-  referrers?: TokenAssetRequest
   /** The document's timestamp. */
   _ts?: boolean | number
   __typename?: boolean | number
@@ -711,6 +750,8 @@ export interface ResourcePageRequest {
 }
 
 export interface ResourceRequest {
+  /** Problem description if there was problem in pinning a resource. */
+  problem?: boolean | number
   /** The document's ID. */
   _id?: boolean | number
   /** URI with which resource was identified. */
@@ -721,7 +762,7 @@ export interface ResourceRequest {
    * pinned.
    */
   cid?: boolean | number
-  pin?: TaskRequest
+  status?: boolean | number
   referrers?:
     | [
         {
@@ -733,41 +774,6 @@ export interface ResourceRequest {
         MetadataPageRequest,
       ]
     | MetadataPageRequest
-  /** The document's timestamp. */
-  _ts?: boolean | number
-  __typename?: boolean | number
-  __scalar?: boolean | number
-}
-
-/**
- * Describen an operation that may fail, like an HTTP
- * request or a JSON parse.
- *
- * Fauna does not support union types so we get by using a
- * single struct represeting union:
- * type Task =
- *   | { status: 'idle', attempt: int }
- *   | { status: 'queued' attempt: int }
- *   | { status: 'pending', start: Time, attempt: int }
- *   | { status: 'failed', end: Time, error: String, attempt: int }
- *   | { status: 'done', end: Time, attempt: int }
- */
-export interface TaskRequest {
-  /** The document's ID. */
-  _id?: boolean | number
-  /** Error message in cas task failed */
-  error?: boolean | number
-  /** Status of the task */
-  status?: boolean | number
-  /** Time at which task failed */
-  end?: boolean | number
-  /**
-   * An attempt number. Usuallly 1, but could be greater
-   * on retries
-   */
-  attempt?: boolean | number
-  /** Time at which task started */
-  start?: boolean | number
   /** The document's timestamp. */
   _ts?: boolean | number
   __typename?: boolean | number
@@ -838,6 +844,41 @@ export interface CursorRequest {
   __scalar?: boolean | number
 }
 
+/**
+ * Describen an operation that may fail, like an HTTP
+ * request or a JSON parse.
+ *
+ * Fauna does not support union types so we get by using a
+ * single struct represeting union:
+ * type Task =
+ *   | { status: 'idle', attempt: int }
+ *   | { status: 'queued' attempt: int }
+ *   | { status: 'pending', start: Time, attempt: int }
+ *   | { status: 'failed', end: Time, error: String, attempt: int }
+ *   | { status: 'done', end: Time, attempt: int }
+ */
+export interface TaskRequest {
+  /** The document's ID. */
+  _id?: boolean | number
+  /** Error message in cas task failed */
+  error?: boolean | number
+  /** Status of the task */
+  status?: boolean | number
+  /** Time at which task failed */
+  end?: boolean | number
+  /**
+   * An attempt number. Usuallly 1, but could be greater
+   * on retries
+   */
+  attempt?: boolean | number
+  /** Time at which task started */
+  start?: boolean | number
+  /** The document's timestamp. */
+  _ts?: boolean | number
+  __typename?: boolean | number
+  __scalar?: boolean | number
+}
+
 export interface MutationRequest {
   /** Delete an existing document in the collection of 'Owner' */
   deleteOwner?: [
@@ -889,6 +930,12 @@ export interface MutationRequest {
     },
     BlockRequest,
   ]
+  /**
+   * Imports Token Metadata. Will be rejected if corresponding asset status isn't
+   * Queued. Otherwise updates corresponding TokenAsset transitioning it to
+   * Succeeded state.
+   */
+  importTokenMetadata?: [{ input?: TokenMetadataImportInput | null }, MetadataRequest] | MetadataRequest
   /** Delete an existing document in the collection of 'ERC721ImportResult' */
   deleteERC721ImportResult?: [
     {
@@ -1090,6 +1137,13 @@ export interface MutationRequest {
     },
     BlockRequest,
   ]
+  /**
+   * Reports problem with a TokenAsset e.g. it was impossible to parse URI
+   * or was unable to fetch content from URI, or content was not a JSON.
+   *
+   * Call is rejected if status isn't Queued.
+   */
+  reportTokenAssetProblem?: [{ input?: TokenAssetProblemInput | null }, TokenAssetRequest] | TokenAssetRequest
   /** Update an existing document in the collection of 'ERC721ImportResult' */
   updateERC721ImportResult?: [
     {
@@ -1104,56 +1158,19 @@ export interface MutationRequest {
   __scalar?: boolean | number
 }
 
-/** 'Metadata' input values */
 export interface MetadataInput {
-  referrers: ID[]
   /** Identifies the asset this token represents */
   name: String
   /** Describes the asset this token represents */
   description: String
   /** A file representing the asset this token represents */
-  image?: MetadataImageRelation | null
-  assets?: MetadataAssetsRelation | null
+  image: ResourceInput
+  assets?: ResourceInput[] | null
 }
 
-/** Allow manipulating the relationship between the types 'Metadata' and 'Resource' using the field 'Metadata.image'. */
-export interface MetadataImageRelation {
-  /** Create a document of type 'Resource' and associate it with the current document. */
-  create?: ResourceInput | null
-  /** Connect a document of type 'Resource' with the current document using its ID. */
-  connect?: ID | null
-}
-
-/** 'Resource' input values */
 export interface ResourceInput {
-  referrers?: ResourceReferrersRelation | null
-  /** URI with which resource was identified. */
   uri: String
-  /**
-   * CID that corresponds to this resource. It may be set when
-   * URL is parsed or it may be set when content is fetched and
-   * pinned.
-   */
   cid?: String | null
-  pin?: ResourcePinRelation | null
-}
-
-/** Allow manipulating the relationship between the types 'Resource' and 'Metadata'. */
-export interface ResourceReferrersRelation {
-  /** Create one or more documents of type 'Metadata' and associate them with the current document. */
-  create?: (MetadataInput | null)[] | null
-  /** Connect one or more documents of type 'Metadata' with the current document using their IDs. */
-  connect?: (ID | null)[] | null
-  /** Disconnect the given documents of type 'Metadata' from the current document using their IDs. */
-  disconnect?: (ID | null)[] | null
-}
-
-/** Allow manipulating the relationship between the types 'Resource' and 'Task' using the field 'Resource.pin'. */
-export interface ResourcePinRelation {
-  /** Create a document of type 'Task' and associate it with the current document. */
-  create?: TaskInput | null
-  /** Connect a document of type 'Task' with the current document using its ID. */
-  connect?: ID | null
 }
 
 /** 'Task' input values */
@@ -1171,16 +1188,6 @@ export interface TaskInput {
   end?: Time | null
   /** Error message in cas task failed */
   error?: String | null
-}
-
-/** Allow manipulating the relationship between the types 'Metadata' and 'Resource'. */
-export interface MetadataAssetsRelation {
-  /** Create one or more documents of type 'Resource' and associate them with the current document. */
-  create?: (ResourceInput | null)[] | null
-  /** Connect one or more documents of type 'Resource' with the current document using their IDs. */
-  connect?: (ID | null)[] | null
-  /** Disconnect the given documents of type 'Resource' from the current document using their IDs. */
-  disconnect?: (ID | null)[] | null
 }
 
 /** 'Block' input values */
@@ -1265,8 +1272,6 @@ export interface TokenAssetMetadataRelation {
   create?: MetadataInput | null
   /** Connect a document of type 'Metadata' with the current document using its ID. */
   connect?: ID | null
-  /** If true, disconnects this document from 'Metadata' */
-  disconnect?: Boolean | null
 }
 
 /** Allow manipulating the relationship between the types 'Token' and 'TokenContract' using the field 'Token.contract'. */
@@ -1351,6 +1356,11 @@ export interface ERC721ImportResultTokensRelation {
   disconnect?: (ID | null)[] | null
 }
 
+export interface TokenMetadataImportInput {
+  tokenAssetID: ID
+  metadata?: MetadataInput | null
+}
+
 /** 'Cursor' input values */
 export interface CursorInput {
   id: String
@@ -1388,6 +1398,13 @@ export interface ERC721ImportTokenOwnerInput {
   id: ID
 }
 
+export interface TokenAssetProblemInput {
+  /** ID of the TokenAsset */
+  tokenAssetID: ID
+  /** Problem description */
+  problem: String
+}
+
 export interface ERC721MetadataQuery {
   name?: String | null
   symbol?: String | null
@@ -1404,6 +1421,44 @@ export interface MetadaQuery {
 export interface ResourceQuery {
   uri?: String | null
   cid?: String | null
+}
+
+/** Allow manipulating the relationship between the types 'Metadata' and 'Resource'. */
+export interface MetadataAssetsRelation {
+  /** Create one or more documents of type 'Resource' and associate them with the current document. */
+  create?: (ResourceInput | null)[] | null
+  /** Connect one or more documents of type 'Resource' with the current document using their IDs. */
+  connect?: (ID | null)[] | null
+  /** Disconnect the given documents of type 'Resource' from the current document using their IDs. */
+  disconnect?: (ID | null)[] | null
+}
+
+/** Allow manipulating the relationship between the types 'Metadata' and 'Resource' using the field 'Metadata.image'. */
+export interface MetadataImageRelation {
+  /** Create a document of type 'Resource' and associate it with the current document. */
+  create?: ResourceInput | null
+  /** Connect a document of type 'Resource' with the current document using its ID. */
+  connect?: ID | null
+}
+
+/** Allow manipulating the relationship between the types 'Metadata' and 'TokenAsset' using the field 'Metadata.source'. */
+export interface MetadataSourceRelation {
+  /** Create a document of type 'TokenAsset' and associate it with the current document. */
+  create?: TokenAssetInput | null
+  /** Connect a document of type 'TokenAsset' with the current document using its ID. */
+  connect?: ID | null
+  /** If true, disconnects this document from 'TokenAsset' */
+  disconnect?: Boolean | null
+}
+
+/** Allow manipulating the relationship between the types 'Resource' and 'Metadata'. */
+export interface ResourceReferrersRelation {
+  /** Create one or more documents of type 'Metadata' and associate them with the current document. */
+  create?: (MetadataInput | null)[] | null
+  /** Connect one or more documents of type 'Metadata' with the current document using their IDs. */
+  connect?: (ID | null)[] | null
+  /** Disconnect the given documents of type 'Metadata' from the current document using their IDs. */
+  disconnect?: (ID | null)[] | null
 }
 
 const Query_possibleTypes = ['Query']
@@ -1478,12 +1533,6 @@ export const isResource = (obj: { __typename: String }): obj is Resource => {
   return Resource_possibleTypes.includes(obj.__typename)
 }
 
-const Task_possibleTypes = ['Task']
-export const isTask = (obj: { __typename: String }): obj is Task => {
-  if (!obj.__typename) throw new Error('__typename is missing')
-  return Task_possibleTypes.includes(obj.__typename)
-}
-
 const MetadataPage_possibleTypes = ['MetadataPage']
 export const isMetadataPage = (obj: { __typename: String }): obj is MetadataPage => {
   if (!obj.__typename) throw new Error('__typename is missing')
@@ -1506,6 +1555,12 @@ const Cursor_possibleTypes = ['Cursor']
 export const isCursor = (obj: { __typename: String }): obj is Cursor => {
   if (!obj.__typename) throw new Error('__typename is missing')
   return Cursor_possibleTypes.includes(obj.__typename)
+}
+
+const Task_possibleTypes = ['Task']
+export const isTask = (obj: { __typename: String }): obj is Task => {
+  if (!obj.__typename) throw new Error('__typename is missing')
+  return Task_possibleTypes.includes(obj.__typename)
 }
 
 const Mutation_possibleTypes = ['Mutation']
@@ -2121,6 +2176,9 @@ export interface TokenAssetObservableChain {
 export interface MetadataPromiseChain {
   /** Identifies the asset this token represents */
   name: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
+  source: TokenAssetPromiseChain & {
+    execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Promise<TokenAsset>
+  }
   assets: ((args?: {
     /** The number of items to return per page. */
     _size?: Int | null
@@ -2138,7 +2196,6 @@ export interface MetadataPromiseChain {
   description: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
-  referrers: { execute: (request: TokenAssetRequest, defaultValue?: TokenAsset[]) => Promise<TokenAsset[]> }
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Promise<Long> }
 }
@@ -2146,6 +2203,9 @@ export interface MetadataPromiseChain {
 export interface MetadataObservableChain {
   /** Identifies the asset this token represents */
   name: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
+  source: TokenAssetObservableChain & {
+    execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Observable<TokenAsset>
+  }
   assets: ((args?: {
     /** The number of items to return per page. */
     _size?: Int | null
@@ -2163,7 +2223,6 @@ export interface MetadataObservableChain {
   description: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
-  referrers: { execute: (request: TokenAssetRequest, defaultValue?: TokenAsset[]) => Observable<TokenAsset[]> }
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
 }
@@ -2189,6 +2248,8 @@ export interface ResourcePageObservableChain {
 }
 
 export interface ResourcePromiseChain {
+  /** Problem description if there was problem in pinning a resource. */
+  problem: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
   /** URI with which resource was identified. */
@@ -2199,7 +2260,7 @@ export interface ResourcePromiseChain {
    * pinned.
    */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
-  pin: TaskPromiseChain & { execute: (request: TaskRequest, defaultValue?: Task) => Promise<Task> }
+  status: { execute: (request?: boolean | number, defaultValue?: ResourceStatus) => Promise<ResourceStatus> }
   referrers: ((args?: {
     /** The number of items to return per page. */
     _size?: Int | null
@@ -2216,6 +2277,8 @@ export interface ResourcePromiseChain {
 }
 
 export interface ResourceObservableChain {
+  /** Problem description if there was problem in pinning a resource. */
+  problem: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
   /** URI with which resource was identified. */
@@ -2226,7 +2289,7 @@ export interface ResourceObservableChain {
    * pinned.
    */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
-  pin: TaskObservableChain & { execute: (request: TaskRequest, defaultValue?: Task) => Observable<Task> }
+  status: { execute: (request?: boolean | number, defaultValue?: ResourceStatus) => Observable<ResourceStatus> }
   referrers: ((args?: {
     /** The number of items to return per page. */
     _size?: Int | null
@@ -2238,72 +2301,6 @@ export interface ResourceObservableChain {
     (MetadataPageObservableChain & {
       execute: (request: MetadataPageRequest, defaultValue?: MetadataPage) => Observable<MetadataPage>
     })
-  /** The document's timestamp. */
-  _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
-}
-
-/**
- * Describen an operation that may fail, like an HTTP
- * request or a JSON parse.
- *
- * Fauna does not support union types so we get by using a
- * single struct represeting union:
- * type Task =
- *   | { status: 'idle', attempt: int }
- *   | { status: 'queued' attempt: int }
- *   | { status: 'pending', start: Time, attempt: int }
- *   | { status: 'failed', end: Time, error: String, attempt: int }
- *   | { status: 'done', end: Time, attempt: int }
- */
-export interface TaskPromiseChain {
-  /** The document's ID. */
-  _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
-  /** Error message in cas task failed */
-  error: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
-  /** Status of the task */
-  status: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
-  /** Time at which task failed */
-  end: { execute: (request?: boolean | number, defaultValue?: Time | null) => Promise<Time | null> }
-  /**
-   * An attempt number. Usuallly 1, but could be greater
-   * on retries
-   */
-  attempt: { execute: (request?: boolean | number, defaultValue?: Int) => Promise<Int> }
-  /** Time at which task started */
-  start: { execute: (request?: boolean | number, defaultValue?: Time | null) => Promise<Time | null> }
-  /** The document's timestamp. */
-  _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Promise<Long> }
-}
-
-/**
- * Describen an operation that may fail, like an HTTP
- * request or a JSON parse.
- *
- * Fauna does not support union types so we get by using a
- * single struct represeting union:
- * type Task =
- *   | { status: 'idle', attempt: int }
- *   | { status: 'queued' attempt: int }
- *   | { status: 'pending', start: Time, attempt: int }
- *   | { status: 'failed', end: Time, error: String, attempt: int }
- *   | { status: 'done', end: Time, attempt: int }
- */
-export interface TaskObservableChain {
-  /** The document's ID. */
-  _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
-  /** Error message in cas task failed */
-  error: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
-  /** Status of the task */
-  status: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
-  /** Time at which task failed */
-  end: { execute: (request?: boolean | number, defaultValue?: Time | null) => Observable<Time | null> }
-  /**
-   * An attempt number. Usuallly 1, but could be greater
-   * on retries
-   */
-  attempt: { execute: (request?: boolean | number, defaultValue?: Int) => Observable<Int> }
-  /** Time at which task started */
-  start: { execute: (request?: boolean | number, defaultValue?: Time | null) => Observable<Time | null> }
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
 }
@@ -2406,6 +2403,72 @@ export interface CursorObservableChain {
   id: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
 }
 
+/**
+ * Describen an operation that may fail, like an HTTP
+ * request or a JSON parse.
+ *
+ * Fauna does not support union types so we get by using a
+ * single struct represeting union:
+ * type Task =
+ *   | { status: 'idle', attempt: int }
+ *   | { status: 'queued' attempt: int }
+ *   | { status: 'pending', start: Time, attempt: int }
+ *   | { status: 'failed', end: Time, error: String, attempt: int }
+ *   | { status: 'done', end: Time, attempt: int }
+ */
+export interface TaskPromiseChain {
+  /** The document's ID. */
+  _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
+  /** Error message in cas task failed */
+  error: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+  /** Status of the task */
+  status: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
+  /** Time at which task failed */
+  end: { execute: (request?: boolean | number, defaultValue?: Time | null) => Promise<Time | null> }
+  /**
+   * An attempt number. Usuallly 1, but could be greater
+   * on retries
+   */
+  attempt: { execute: (request?: boolean | number, defaultValue?: Int) => Promise<Int> }
+  /** Time at which task started */
+  start: { execute: (request?: boolean | number, defaultValue?: Time | null) => Promise<Time | null> }
+  /** The document's timestamp. */
+  _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Promise<Long> }
+}
+
+/**
+ * Describen an operation that may fail, like an HTTP
+ * request or a JSON parse.
+ *
+ * Fauna does not support union types so we get by using a
+ * single struct represeting union:
+ * type Task =
+ *   | { status: 'idle', attempt: int }
+ *   | { status: 'queued' attempt: int }
+ *   | { status: 'pending', start: Time, attempt: int }
+ *   | { status: 'failed', end: Time, error: String, attempt: int }
+ *   | { status: 'done', end: Time, attempt: int }
+ */
+export interface TaskObservableChain {
+  /** The document's ID. */
+  _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
+  /** Error message in cas task failed */
+  error: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
+  /** Status of the task */
+  status: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
+  /** Time at which task failed */
+  end: { execute: (request?: boolean | number, defaultValue?: Time | null) => Observable<Time | null> }
+  /**
+   * An attempt number. Usuallly 1, but could be greater
+   * on retries
+   */
+  attempt: { execute: (request?: boolean | number, defaultValue?: Int) => Observable<Int> }
+  /** Time at which task started */
+  start: { execute: (request?: boolean | number, defaultValue?: Time | null) => Observable<Time | null> }
+  /** The document's timestamp. */
+  _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
+}
+
 export interface MutationPromiseChain {
   /** Delete an existing document in the collection of 'Owner' */
   deleteOwner: (args: {
@@ -2441,6 +2504,15 @@ export interface MutationPromiseChain {
     /** 'Block' input values */
     data: BlockInput
   }) => BlockPromiseChain & { execute: (request: BlockRequest, defaultValue?: Block) => Promise<Block> }
+  /**
+   * Imports Token Metadata. Will be rejected if corresponding asset status isn't
+   * Queued. Otherwise updates corresponding TokenAsset transitioning it to
+   * Succeeded state.
+   */
+  importTokenMetadata: ((args?: {
+    input?: TokenMetadataImportInput | null
+  }) => MetadataPromiseChain & { execute: (request: MetadataRequest, defaultValue?: Metadata) => Promise<Metadata> }) &
+    (MetadataPromiseChain & { execute: (request: MetadataRequest, defaultValue?: Metadata) => Promise<Metadata> })
   /** Delete an existing document in the collection of 'ERC721ImportResult' */
   deleteERC721ImportResult: (args: {
     /** The 'ERC721ImportResult' document's ID */
@@ -2600,6 +2672,18 @@ export interface MutationPromiseChain {
     /** 'Block' input values */
     data: BlockInput
   }) => BlockPromiseChain & { execute: (request: BlockRequest, defaultValue?: Block | null) => Promise<Block | null> }
+  /**
+   * Reports problem with a TokenAsset e.g. it was impossible to parse URI
+   * or was unable to fetch content from URI, or content was not a JSON.
+   *
+   * Call is rejected if status isn't Queued.
+   */
+  reportTokenAssetProblem: ((args?: {
+    input?: TokenAssetProblemInput | null
+  }) => TokenAssetPromiseChain & {
+    execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Promise<TokenAsset>
+  }) &
+    (TokenAssetPromiseChain & { execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Promise<TokenAsset> })
   /** Update an existing document in the collection of 'ERC721ImportResult' */
   updateERC721ImportResult: (args: {
     /** The 'ERC721ImportResult' document's ID */
@@ -2649,6 +2733,15 @@ export interface MutationObservableChain {
     /** 'Block' input values */
     data: BlockInput
   }) => BlockObservableChain & { execute: (request: BlockRequest, defaultValue?: Block) => Observable<Block> }
+  /**
+   * Imports Token Metadata. Will be rejected if corresponding asset status isn't
+   * Queued. Otherwise updates corresponding TokenAsset transitioning it to
+   * Succeeded state.
+   */
+  importTokenMetadata: ((args?: {
+    input?: TokenMetadataImportInput | null
+  }) => MetadataObservableChain & { execute: (request: MetadataRequest, defaultValue?: Metadata) => Observable<Metadata> }) &
+    (MetadataObservableChain & { execute: (request: MetadataRequest, defaultValue?: Metadata) => Observable<Metadata> })
   /** Delete an existing document in the collection of 'ERC721ImportResult' */
   deleteERC721ImportResult: (args: {
     /** The 'ERC721ImportResult' document's ID */
@@ -2814,6 +2907,20 @@ export interface MutationObservableChain {
     /** 'Block' input values */
     data: BlockInput
   }) => BlockObservableChain & { execute: (request: BlockRequest, defaultValue?: Block | null) => Observable<Block | null> }
+  /**
+   * Reports problem with a TokenAsset e.g. it was impossible to parse URI
+   * or was unable to fetch content from URI, or content was not a JSON.
+   *
+   * Call is rejected if status isn't Queued.
+   */
+  reportTokenAssetProblem: ((args?: {
+    input?: TokenAssetProblemInput | null
+  }) => TokenAssetObservableChain & {
+    execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Observable<TokenAsset>
+  }) &
+    (TokenAssetObservableChain & {
+      execute: (request: TokenAssetRequest, defaultValue?: TokenAsset) => Observable<TokenAsset>
+    })
   /** Update an existing document in the collection of 'ERC721ImportResult' */
   updateERC721ImportResult: (args: {
     /** The 'ERC721ImportResult' document's ID */

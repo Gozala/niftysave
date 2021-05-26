@@ -9,5 +9,3 @@ export interface Success<T> {
   ok: true
   value: T
 }
-
-export declare function unwrap<X, T>(result: Result<X, T>): T

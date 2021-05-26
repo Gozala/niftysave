@@ -281,6 +281,7 @@ type Metadata {
   Identifies the asset this token represents
   """
   name: String!
+  source: TokenAsset!
   assets(
     """
     The number of items to return per page.
@@ -307,7 +308,6 @@ type Metadata {
   The document's ID.
   """
   _id: ID!
-  referrers: [TokenAsset!]!
 
   """
   The document's timestamp.
@@ -350,12 +350,7 @@ input MetadataImageRelation {
   connect: ID
 }
 
-"""
-'Metadata' input values
-"""
 input MetadataInput {
-  referrers: [ID!]!
-
   """
   Identifies the asset this token represents
   """
@@ -369,8 +364,8 @@ input MetadataInput {
   """
   A file representing the asset this token represents
   """
-  image: MetadataImageRelation
-  assets: MetadataAssetsRelation
+  image: ResourceInput!
+  assets: [ResourceInput!]
 }
 
 """
@@ -391,6 +386,26 @@ type MetadataPage {
   A cursor for elements coming before the current page.
   """
   before: String
+}
+
+"""
+Allow manipulating the relationship between the types 'Metadata' and 'TokenAsset' using the field 'Metadata.source'.
+"""
+input MetadataSourceRelation {
+  """
+  Create a document of type 'TokenAsset' and associate it with the current document.
+  """
+  create: TokenAssetInput
+
+  """
+  Connect a document of type 'TokenAsset' with the current document using its ID.
+  """
+  connect: ID
+
+  """
+  If true, disconnects this document from 'TokenAsset'
+  """
+  disconnect: Boolean
 }
 
 type Mutation {
@@ -458,6 +473,13 @@ type Mutation {
     """
     data: BlockInput!
   ): Block!
+
+  """
+  Imports Token Metadata. Will be rejected if corresponding asset status isn't
+  Queued. Otherwise updates corresponding TokenAsset transitioning it to
+  Succeeded state.
+  """
+  importTokenMetadata(input: TokenMetadataImportInput): Metadata!
 
   """
   Delete an existing document in the collection of 'ERC721ImportResult'
@@ -731,6 +753,14 @@ type Mutation {
   ): Block
 
   """
+  Reports problem with a TokenAsset e.g. it was impossible to parse URI
+  or was unable to fetch content from URI, or content was not a JSON.
+
+  Call is rejected if status isn't Queued.
+  """
+  reportTokenAssetProblem(input: TokenAssetProblemInput): TokenAsset!
+
+  """
   Update an existing document in the collection of 'ERC721ImportResult'
   """
   updateERC721ImportResult(
@@ -945,6 +975,11 @@ type QueryFindTokenAssetsPage {
 
 type Resource {
   """
+  Problem description if there was problem in pinning a resource.
+  """
+  problem: String
+
+  """
   The document's ID.
   """
   _id: ID!
@@ -960,7 +995,7 @@ type Resource {
   pinned.
   """
   cid: String
-  pin: Task!
+  status: ResourceStatus!
   referrers(
     """
     The number of items to return per page.
@@ -979,24 +1014,9 @@ type Resource {
   _ts: Long!
 }
 
-"""
-'Resource' input values
-"""
 input ResourceInput {
-  referrers: ResourceReferrersRelation
-
-  """
-  URI with which resource was identified.
-  """
   uri: String!
-
-  """
-  CID that corresponds to this resource. It may be set when
-  URL is parsed or it may be set when content is fetched and
-  pinned.
-  """
   cid: String
-  pin: ResourcePinRelation
 }
 
 """
@@ -1017,21 +1037,6 @@ type ResourcePage {
   A cursor for elements coming before the current page.
   """
   before: String
-}
-
-"""
-Allow manipulating the relationship between the types 'Resource' and 'Task' using the field 'Resource.pin'.
-"""
-input ResourcePinRelation {
-  """
-  Create a document of type 'Task' and associate it with the current document.
-  """
-  create: TaskInput
-
-  """
-  Connect a document of type 'Task' with the current document using its ID.
-  """
-  connect: ID
 }
 
 input ResourceQuery {
@@ -1057,6 +1062,41 @@ input ResourceReferrersRelation {
   Disconnect the given documents of type 'Metadata' from the current document using their IDs.
   """
   disconnect: [ID]
+}
+
+enum ResourceStatus {
+  """
+  Has not been processed yet
+  """
+  Idle
+
+  """
+  Pin request started. This usually implies that we found a CID in the
+  tokenURI (because it was a gateway URL) so we started a pin but do not
+  know if it was possible to fetch content.
+  """
+  PinQueued
+
+  """
+  Was pinned succesfully
+  """
+  Pinned
+
+  """
+  tokenURI is either malformed or the protocol is not supported.
+  """
+  FailedURIParse
+
+  """
+  Was unable to fetch the content.
+  """
+  FailedFetch
+
+  """
+  Pin request failed, can happen when pinned by CID but correspoding content
+  is not on the network.
+  """
+  PinFailure
 }
 
 """
@@ -1280,11 +1320,18 @@ input TokenAssetMetadataRelation {
   Connect a document of type 'Metadata' with the current document using its ID.
   """
   connect: ID
+}
+
+input TokenAssetProblemInput {
+  """
+  ID of the TokenAsset
+  """
+  tokenAssetID: ID!
 
   """
-  If true, disconnects this document from 'Metadata'
+  Problem description
   """
-  disconnect: Boolean
+  problem: String!
 }
 
 """
@@ -1308,6 +1355,8 @@ input TokenAssetReferrersRelation {
 }
 
 enum TokenAssetStatus {
+  Idle
+  FailedURIParse
   Queued
   Failed
   Succeeded
@@ -1458,6 +1507,11 @@ input TokenInput {
   owner: TokenOwnerRelation
   blocks: TokenBlocksRelation
   imported: TokenImportedRelation
+}
+
+input TokenMetadataImportInput {
+  tokenAssetID: ID!
+  metadata: MetadataInput
 }
 
 """

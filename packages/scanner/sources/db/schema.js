@@ -1,5 +1,29 @@
+export var ResourceStatus;
+(function (ResourceStatus) {
+    /** Has not been processed yet */
+    ResourceStatus["Idle"] = "Idle";
+    /**
+     * Pin request started. This usually implies that we found a CID in the
+     * tokenURI (because it was a gateway URL) so we started a pin but do not
+     * know if it was possible to fetch content.
+     */
+    ResourceStatus["PinQueued"] = "PinQueued";
+    /** Was pinned succesfully */
+    ResourceStatus["Pinned"] = "Pinned";
+    /** tokenURI is either malformed or the protocol is not supported. */
+    ResourceStatus["FailedURIParse"] = "FailedURIParse";
+    /** Was unable to fetch the content. */
+    ResourceStatus["FailedFetch"] = "FailedFetch";
+    /**
+     * Pin request failed, can happen when pinned by CID but correspoding content
+     * is not on the network.
+     */
+    ResourceStatus["PinFailure"] = "PinFailure";
+})(ResourceStatus || (ResourceStatus = {}));
 export var TokenAssetStatus;
 (function (TokenAssetStatus) {
+    TokenAssetStatus["Idle"] = "Idle";
+    TokenAssetStatus["FailedURIParse"] = "FailedURIParse";
     TokenAssetStatus["Queued"] = "Queued";
     TokenAssetStatus["Failed"] = "Failed";
     TokenAssetStatus["Succeeded"] = "Succeeded";
@@ -76,12 +100,6 @@ export const isResource = (obj) => {
         throw new Error('__typename is missing');
     return Resource_possibleTypes.includes(obj.__typename);
 };
-const Task_possibleTypes = ['Task'];
-export const isTask = (obj) => {
-    if (!obj.__typename)
-        throw new Error('__typename is missing');
-    return Task_possibleTypes.includes(obj.__typename);
-};
 const MetadataPage_possibleTypes = ['MetadataPage'];
 export const isMetadataPage = (obj) => {
     if (!obj.__typename)
@@ -105,6 +123,12 @@ export const isCursor = (obj) => {
     if (!obj.__typename)
         throw new Error('__typename is missing');
     return Cursor_possibleTypes.includes(obj.__typename);
+};
+const Task_possibleTypes = ['Task'];
+export const isTask = (obj) => {
+    if (!obj.__typename)
+        throw new Error('__typename is missing');
+    return Task_possibleTypes.includes(obj.__typename);
 };
 const Mutation_possibleTypes = ['Mutation'];
 export const isMutation = (obj) => {

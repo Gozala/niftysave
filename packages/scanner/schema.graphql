@@ -58,47 +58,8 @@ type TokenAsset {
   problem: String
 }
 
-"""
-Describen an operation that may fail, like an HTTP
-request or a JSON parse.
-
-Fauna does not support union types so we get by using a
-single struct represeting union:
-type Task =
-  | { status: 'idle', attempt: int }
-  | { status: 'queued' attempt: int }
-  | { status: 'pending', start: Time, attempt: int }
-  | { status: 'failed', end: Time, error: String, attempt: int }
-  | { status: 'done', end: Time, attempt: int }
-"""
-type Task {
-  """
-  Status of the task
-  """
-  status: String!
-
-  """
-  An attempt number. Usuallly 1, but could be greater
-  on retries
-  """
-  attempt: Int!
-
-  """
-  Time at which task started
-  """
-  start: Time
-  """
-  Time at which task failed
-  """
-  end: Time
-  """
-  Error message in cas task failed
-  """
-  error: String
-}
-
 type Metadata {
-  referrers: [TokenAsset!]!
+  source: TokenAsset! @relation
 
   """
   Identifies the asset this token represents
@@ -119,13 +80,47 @@ type Metadata {
   assets: [Resource!] @relation
 }
 
+enum ResourceStatus {
+  """
+  Has not been processed yet
+  """
+  Idle
+  """
+  Pin request started. This usually implies that we found a CID in the
+  tokenURI (because it was a gateway URL) so we started a pin but do not
+  know if it was possible to fetch content.
+  """
+  PinQueued
+  """
+  Was pinned succesfully
+  """
+  Pinned
+
+  # All kinds of error states
+
+  """
+  tokenURI is either malformed or the protocol is not supported.
+  """
+  FailedURIParse
+  """
+  Was unable to fetch the content.
+  """
+  FailedFetch
+  """
+  Pin request failed, can happen when pinned by CID but correspoding content
+  is not on the network.
+  """
+  PinFailure
+}
+
 type Resource {
   referrers: [Metadata!] @relation
+  status: ResourceStatus! @index
 
   """
   URI with which resource was identified.
   """
-  uri: String! @unique
+  uri: String! @unique @index
   """
   CID that corresponds to this resource. It may be set when
   URL is parsed or it may be set when content is fetched and
@@ -133,7 +128,10 @@ type Resource {
   """
   cid: String @index
 
-  pin: Task! @relation
+  """
+  Problem description if there was problem in pinning a resource.
+  """
+  problem: String
 }
 
 type Owner {
@@ -230,6 +228,10 @@ input ERC721ImportTokenOwnerInput {
 }
 
 enum TokenAssetStatus {
+  Idle
+
+  FailedURIParse
+
   Queued
   Failed
   Succeeded
@@ -251,11 +253,67 @@ type Query {
   """
   Provides tokens with the
   """
-  findTokenAssets(where: FindTokenAssetsInput): [TokenAsset!]
+  findTokenAssets(where: FindTokenAssetsInput): [TokenAsset!]!
     @resolver(paginated: true)
     @relation
 }
 
+input TokenAssetProblemInput {
+  """
+  ID of the TokenAsset
+  """
+  tokenAssetID: ID!
+  """
+  Problem description
+  """
+  problem: String!
+}
+
+input TokenMetadataImportInput {
+  tokenAssetID: ID!
+  metadata: MetadataInput
+}
+
+input MetadataInput {
+  """
+  Identifies the asset this token represents
+  """
+  name: String!
+  """
+  Describes the asset this token represents
+  """
+  description: String!
+  """
+  A file representing the asset this token represents
+  """
+  image: ResourceInput!
+
+  # """
+  # Additional assets that token linked to
+  # """
+  assets: [ResourceInput!]
+}
+
+input ResourceInput {
+  uri: String!
+  cid: String
+}
+
 type Mutation {
   importERC721(input: ERC721ImportInput!): ERC721ImportResult! @resolver
+
+  """
+  Reports problem with a TokenAsset e.g. it was impossible to parse URI
+  or was unable to fetch content from URI, or content was not a JSON.
+
+  Call is rejected if status isn't Queued.
+  """
+  reportTokenAssetProblem(input: TokenAssetProblemInput): TokenAsset! @resolver
+
+  """
+  Imports Token Metadata. Will be rejected if corresponding asset status isn't
+  Queued. Otherwise updates corresponding TokenAsset transitioning it to
+  Succeeded state.
+  """
+  importTokenMetadata(input: TokenMetadataImportInput): Metadata! @resolver
 }
