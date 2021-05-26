@@ -260,6 +260,10 @@ input ERC721MetadataQuery {
   ipnft: String
 }
 
+input FindTokenAssetsInput {
+  status: TokenAssetStatus
+}
+
 """
 The `Long` scalar type represents non-fractional signed whole numeric values.
 Long can represent values between -(2^63) and 2^63 - 1.
@@ -785,6 +789,22 @@ type Query {
   constract(id: ID): TokenContract
 
   """
+  Provides tokens with the
+  """
+  findTokenAssets(
+    """
+    The number of items to return per page.
+    """
+    _size: Int
+
+    """
+    The pagination cursor.
+    """
+    _cursor: String
+    where: FindTokenAssetsInput
+  ): QueryFindTokenAssetsPage!
+
+  """
   Find a document from the collection of 'Resource' by its id.
   """
   findResourceByID(
@@ -901,6 +921,26 @@ type Query {
     """
     _cursor: String
   ): TokenPage!
+}
+
+"""
+The pagination object for elements of type 'TokenAsset'.
+"""
+type QueryFindTokenAssetsPage {
+  """
+  The elements of type 'TokenAsset' in this page.
+  """
+  data: [TokenAsset]!
+
+  """
+  A cursor for elements coming after the current page.
+  """
+  after: String
+
+  """
+  A cursor for elements coming before the current page.
+  """
+  before: String
 }
 
 type Resource {
@@ -1150,6 +1190,11 @@ type Token {
 
 type TokenAsset {
   """
+  Problem description if failed to get the metadata.
+  """
+  problem: String
+
+  """
   The document's ID.
   """
   _id: ID!
@@ -1215,6 +1260,11 @@ input TokenAssetInput {
   Present when it was passibly to succesfully pin the token.
   """
   ipnft: String
+
+  """
+  Problem description if failed to get the metadata.
+  """
+  problem: String
 }
 
 """
@@ -1255,6 +1305,12 @@ input TokenAssetReferrersRelation {
   Disconnect the given documents of type 'Token' from the current document using their IDs.
   """
   disconnect: [ID]
+}
+
+enum TokenAssetStatus {
+  Queued
+  Failed
+  Succeeded
 }
 
 """

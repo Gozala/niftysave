@@ -6,6 +6,8 @@ export interface Query {
   /** Find a document from the collection of 'TokenContract' by its id. */
   findTokenContractByID: TokenContract | null
   constract: TokenContract | null
+  /** Provides tokens with the */
+  findTokenAssets: QueryFindTokenAssetsPage
   /** Find a document from the collection of 'Resource' by its id. */
   findResourceByID: Resource | null
   /** Find a document from the collection of 'Token' by its id. */
@@ -130,6 +132,8 @@ export interface Owner {
 }
 
 export interface TokenAsset {
+  /** Problem description if failed to get the metadata. */
+  problem: String | null
   /** The document's ID. */
   _id: ID
   tokenURI: String
@@ -265,6 +269,23 @@ export interface TokenContract {
 /** The `Boolean` scalar type represents `true` or `false`. */
 export type Boolean = boolean
 
+export enum TokenAssetStatus {
+  Queued = 'Queued',
+  Failed = 'Failed',
+  Succeeded = 'Succeeded',
+}
+
+/** The pagination object for elements of type 'TokenAsset'. */
+export interface QueryFindTokenAssetsPage {
+  /** The elements of type 'TokenAsset' in this page. */
+  data: (TokenAsset | null)[]
+  /** A cursor for elements coming after the current page. */
+  after: String | null
+  /** A cursor for elements coming before the current page. */
+  before: String | null
+  __typename: 'QueryFindTokenAssetsPage'
+}
+
 export interface Cursor {
   /** The document's ID. */
   _id: ID
@@ -359,6 +380,19 @@ export interface QueryRequest {
     TokenContractRequest,
   ]
   constract?: [{ id?: ID | null }, TokenContractRequest] | TokenContractRequest
+  /** Provides tokens with the */
+  findTokenAssets?:
+    | [
+        {
+          /** The number of items to return per page. */
+          _size?: Int | null
+          /** The pagination cursor. */
+          _cursor?: String | null
+          where?: FindTokenAssetsInput | null
+        },
+        QueryFindTokenAssetsPageRequest,
+      ]
+    | QueryFindTokenAssetsPageRequest
   /** Find a document from the collection of 'Resource' by its id. */
   findResourceByID?: [
     {
@@ -599,6 +633,8 @@ export interface OwnerRequest {
 }
 
 export interface TokenAssetRequest {
+  /** Problem description if failed to get the metadata. */
+  problem?: boolean | number
   /** The document's ID. */
   _id?: boolean | number
   tokenURI?: boolean | number
@@ -772,6 +808,22 @@ export interface TokenContractRequest {
     | TokenPageRequest
   /** The document's timestamp. */
   _ts?: boolean | number
+  __typename?: boolean | number
+  __scalar?: boolean | number
+}
+
+export interface FindTokenAssetsInput {
+  status?: TokenAssetStatus | null
+}
+
+/** The pagination object for elements of type 'TokenAsset'. */
+export interface QueryFindTokenAssetsPageRequest {
+  /** The elements of type 'TokenAsset' in this page. */
+  data?: TokenAssetRequest
+  /** A cursor for elements coming after the current page. */
+  after?: boolean | number
+  /** A cursor for elements coming before the current page. */
+  before?: boolean | number
   __typename?: boolean | number
   __scalar?: boolean | number
 }
@@ -1193,6 +1245,8 @@ export interface TokenAssetInput {
    * Present when it was passibly to succesfully pin the token.
    */
   ipnft?: String | null
+  /** Problem description if failed to get the metadata. */
+  problem?: String | null
 }
 
 /** Allow manipulating the relationship between the types 'TokenAsset' and 'Token'. */
@@ -1442,6 +1496,12 @@ export const isTokenContract = (obj: { __typename: String }): obj is TokenContra
   return TokenContract_possibleTypes.includes(obj.__typename)
 }
 
+const QueryFindTokenAssetsPage_possibleTypes = ['QueryFindTokenAssetsPage']
+export const isQueryFindTokenAssetsPage = (obj: { __typename: String }): obj is QueryFindTokenAssetsPage => {
+  if (!obj.__typename) throw new Error('__typename is missing')
+  return QueryFindTokenAssetsPage_possibleTypes.includes(obj.__typename)
+}
+
 const Cursor_possibleTypes = ['Cursor']
 export const isCursor = (obj: { __typename: String }): obj is Cursor => {
   if (!obj.__typename) throw new Error('__typename is missing')
@@ -1474,6 +1534,25 @@ export interface QueryPromiseChain {
   }) &
     (TokenContractPromiseChain & {
       execute: (request: TokenContractRequest, defaultValue?: TokenContract | null) => Promise<TokenContract | null>
+    })
+  /** Provides tokens with the */
+  findTokenAssets: ((args?: {
+    /** The number of items to return per page. */
+    _size?: Int | null
+    /** The pagination cursor. */
+    _cursor?: String | null
+    where?: FindTokenAssetsInput | null
+  }) => QueryFindTokenAssetsPagePromiseChain & {
+    execute: (
+      request: QueryFindTokenAssetsPageRequest,
+      defaultValue?: QueryFindTokenAssetsPage,
+    ) => Promise<QueryFindTokenAssetsPage>
+  }) &
+    (QueryFindTokenAssetsPagePromiseChain & {
+      execute: (
+        request: QueryFindTokenAssetsPageRequest,
+        defaultValue?: QueryFindTokenAssetsPage,
+      ) => Promise<QueryFindTokenAssetsPage>
     })
   /** Find a document from the collection of 'Resource' by its id. */
   findResourceByID: (args: {
@@ -1591,6 +1670,25 @@ export interface QueryObservableChain {
   }) &
     (TokenContractObservableChain & {
       execute: (request: TokenContractRequest, defaultValue?: TokenContract | null) => Observable<TokenContract | null>
+    })
+  /** Provides tokens with the */
+  findTokenAssets: ((args?: {
+    /** The number of items to return per page. */
+    _size?: Int | null
+    /** The pagination cursor. */
+    _cursor?: String | null
+    where?: FindTokenAssetsInput | null
+  }) => QueryFindTokenAssetsPageObservableChain & {
+    execute: (
+      request: QueryFindTokenAssetsPageRequest,
+      defaultValue?: QueryFindTokenAssetsPage,
+    ) => Observable<QueryFindTokenAssetsPage>
+  }) &
+    (QueryFindTokenAssetsPageObservableChain & {
+      execute: (
+        request: QueryFindTokenAssetsPageRequest,
+        defaultValue?: QueryFindTokenAssetsPage,
+      ) => Observable<QueryFindTokenAssetsPage>
     })
   /** Find a document from the collection of 'Resource' by its id. */
   findResourceByID: (args: {
@@ -1949,6 +2047,8 @@ export interface OwnerObservableChain {
 }
 
 export interface TokenAssetPromiseChain {
+  /** Problem description if failed to get the metadata. */
+  problem: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
   tokenURI: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
@@ -1982,6 +2082,8 @@ export interface TokenAssetPromiseChain {
 }
 
 export interface TokenAssetObservableChain {
+  /** Problem description if failed to get the metadata. */
+  problem: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
   tokenURI: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
@@ -2266,6 +2368,26 @@ export interface TokenContractObservableChain {
     (TokenPageObservableChain & { execute: (request: TokenPageRequest, defaultValue?: TokenPage) => Observable<TokenPage> })
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
+}
+
+/** The pagination object for elements of type 'TokenAsset'. */
+export interface QueryFindTokenAssetsPagePromiseChain {
+  /** The elements of type 'TokenAsset' in this page. */
+  data: { execute: (request: TokenAssetRequest, defaultValue?: (TokenAsset | null)[]) => Promise<(TokenAsset | null)[]> }
+  /** A cursor for elements coming after the current page. */
+  after: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+  /** A cursor for elements coming before the current page. */
+  before: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+}
+
+/** The pagination object for elements of type 'TokenAsset'. */
+export interface QueryFindTokenAssetsPageObservableChain {
+  /** The elements of type 'TokenAsset' in this page. */
+  data: { execute: (request: TokenAssetRequest, defaultValue?: (TokenAsset | null)[]) => Observable<(TokenAsset | null)[]> }
+  /** A cursor for elements coming after the current page. */
+  after: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
+  /** A cursor for elements coming before the current page. */
+  before: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
 }
 
 export interface CursorPromiseChain {
