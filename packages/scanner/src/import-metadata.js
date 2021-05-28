@@ -142,7 +142,7 @@ const processTokenAsset = async asset => {
   console.log(`📌 Pinned matadata ${cid}`)
   metadata.cid = cid
 
-  console.log(`📝 (${_id}) Recording metadata into db`, metadata)
+  console.log(`📝 (${_id}) Recording metadata into db`)
   const result = await Result.fromPromise(
     importTokenMetadata({
       tokenAssetID: _id,
