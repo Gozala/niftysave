@@ -308,6 +308,7 @@ type Metadata {
   The document's ID.
   """
   _id: ID!
+  cid: String!
 
   """
   The document's timestamp.
@@ -352,6 +353,11 @@ input MetadataImageRelation {
 
 input MetadataInput {
   """
+  CID for the metadata content.
+  """
+  cid: String!
+
+  """
   Identifies the asset this token represents
   """
   name: String!
@@ -365,7 +371,7 @@ input MetadataInput {
   A file representing the asset this token represents
   """
   image: ResourceInput!
-  assets: [ResourceInput!]
+  assets: [ResourceInput!]!
 }
 
 """
@@ -1355,8 +1361,6 @@ input TokenAssetReferrersRelation {
 }
 
 enum TokenAssetStatus {
-  Idle
-  FailedURIParse
   Queued
   Failed
   Succeeded

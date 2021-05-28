@@ -3,7 +3,9 @@ import { mutate, query } from "./graphql.js"
 import * as Result from "./result/lib.js"
 import fetch from "@web-std/fetch"
 import { CID } from "multiformats"
-import * as Schema from "../sources/db/schema"
+import * as Schema from "../sources/db/schema.js"
+import * as IPFSURL from "./ipfs-url.js"
+import * as Cluster from "./cluster.js"
 
 /**
  * @param {Object} options
@@ -21,7 +23,7 @@ export const spawn = async ({ budget, batchSize }) => {
       console.log(`🤹 Spawn ${assets.length} tasks to process fetched assets`)
       const results = assets.map(processTokenAsset)
       await Promise.all(results)
-      console.log(`✨ Processed batch of assets`)
+      console.log(`✨ Processed batch of ${assets.length} assets`)
     }
   }
   console.log("⌛️ Finish, time is up")
@@ -79,40 +81,81 @@ const importTokenMetadata = async input => {
  * @param {TokenAsset} asset
  */
 const processTokenAsset = async asset => {
-  const parse = parseURI(asset.tokenURI)
-  if (!parse.ok) {
+  const { _id, tokenURI } = asset
+  console.log(`🔬 (${_id}) Parsing tokenURI`)
+  const urlResult = parseURI(tokenURI)
+  if (!urlResult.ok) {
+    console.error(
+      `🚨 (${_id}) Parseing URL failed ${urlResult.error}, report problem`
+    )
     return await reportTokenAssetProblem(asset, "Has no tokenURI")
   }
-  const url = parse.value
-  const fetch = await fetchResource(url)
-    .then(Result.ok)
-    .catch(Result.error)
+  const url = urlResult.value
 
-  if (!fetch.ok) {
+  console.log(`📡 (${_id}) Fetching content`)
+  const fetchResult = await Result.fromPromise(fetchResource(url))
+
+  if (!fetchResult.ok) {
+    console.error(
+      `🚨 (${_id}) Fetch failed ${fetchResult.error}, report problem`
+    )
     return await reportTokenAssetProblem(asset, "fail to fetch")
   }
 
-  const read = await fetch.value
-    .text()
-    .then(Result.ok)
-    .catch(Result.error)
+  console.log(`📑 (${_id}) Reading fetched content`)
+  const readResult = await Result.fromPromise(fetchResult.value.text())
 
-  if (!read.ok) {
+  if (!readResult.ok) {
+    console.error(`🚨 (${_id}) Read failed ${readResult.error}, report problem`)
     return await reportTokenAssetProblem(asset, "failed to read")
   }
+  const content = readResult.value
 
-  const erc721 = await parseERC721Metadata(read.value)
-    .then(Result.ok)
-    .catch(Result.error)
+  console.log(`🧾 (${_id}) Parsing ERC721 metadata`)
+  const parseResult = await Result.fromPromise(parseERC721Metadata(content))
 
-  if (!erc721.ok) {
+  if (!parseResult.ok) {
+    console.error(
+      `🚨 (${_id}) Parse failed ${parseResult.error}, report problem`
+    )
     return await reportTokenAssetProblem(asset, "failed to parse as json")
   }
+  const metadata = parseResult.value
 
-  await importTokenMetadata({
-    tokenAssetID: asset._id,
-    metadata: erc721.value,
-  })
+  console.log(`📍 (${_id}) Pin metadata in IPFS`)
+  const pinOptions = {
+    assetID: _id,
+    ...(url.protocol !== "data:" && { sourceURL: url.href }),
+  }
+
+  const pinResult = IPFSURL.isIPFSURL(url)
+    ? await Result.fromPromise(Cluster.pin(IPFSURL.cid(url), pinOptions))
+    : await Result.fromPromise(Cluster.add(fetchResult.value))
+
+  if (!pinResult.ok) {
+    console.error(
+      `🚨 (${_id}) Failed to pin ${pinResult.error}, report problem\n ${pinResult.error.stack}`
+    )
+    return await reportTokenAssetProblem(asset, "failed to pin")
+  }
+  const { cid } = pinResult.value
+  console.log(`📌 Pinned matadata ${cid}`)
+  metadata.cid = cid
+
+  console.log(`📝 (${_id}) Recording metadata into db`, metadata)
+  const result = await Result.fromPromise(
+    importTokenMetadata({
+      tokenAssetID: _id,
+      metadata,
+    })
+  )
+
+  if (!result.ok) {
+    console.error(`💣 (${_id}) Failed to store metadata ${result.error}`)
+    return await reportTokenAssetProblem(asset, "failed to add metadata")
+  }
+
+  return result.value
 }
 
 /**
@@ -128,10 +171,14 @@ const parseURI = uri => {
 }
 
 /**
- * @param {URL} url
+ * @param {URL} resourceURL
+ * @returns {Promise<Blob>}
  */
 
-const fetchResource = async url => {
+const fetchResource = async resourceURL => {
+  const url = IPFSURL.isIPFSURL(resourceURL)
+    ? IPFSURL.embed(resourceURL)
+    : resourceURL
   const response = await fetch(url.href)
   if (response.ok) {
     return await response.blob()
@@ -158,15 +205,15 @@ const parseERC721Metadata = async content => {
     throw new Error("image field is missing")
   }
 
-  const imageResource = readResource(image, ["image"])
+  const imageResource = parseResource(image)
 
-  /** @type {Resource[]} */
+  /** @type {Schema.ResourceInput[]} */
   const assets = []
 
   /** @type {Schema.MetadataInput} */
-  const metadata = { name, description, image: imageResource, assets }
-  for (const [value, path] of iterate({ ...metadata, image: null })) {
-    const asset = typeof value === "string" && tryReadResource(value, path)
+  const metadata = { cid: "", name, description, image: imageResource, assets }
+  for (const [value] of iterate({ ...metadata, image: null })) {
+    const asset = typeof value === "string" && tryParseResource(value)
     if (asset) {
       assets.push(asset)
     }
@@ -176,33 +223,29 @@ const parseERC721Metadata = async content => {
 }
 
 /**
- * @typedef {{uri:string, cid?: string, path:string}} Resource
  * @param {string} input
- * @param {PropertyKey[]} path
- * @returns {Resource}
+ * @returns {Schema.ResourceInput}
  */
-const readResource = (input, path) => {
+const parseResource = input => {
   const url = new URL(input)
   if (url.protocol === "ipfs") {
     return {
       uri: input,
       cid: parseCIDFromIPFSURL(url).toString(),
-      path: path.join("."),
     }
   } else {
-    return { uri: input, path: path.join() }
+    return { uri: input }
   }
 }
 
 /**
  *
  * @param {string} input
- * @param {PropertyKey[]} path
  * @returns
  */
-const tryReadResource = (input, path) => {
+const tryParseResource = input => {
   try {
-    return readResource(input, path)
+    return parseResource(input)
   } catch (error) {
     return null
   }

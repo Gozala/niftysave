@@ -29,8 +29,8 @@
   "dependencies": {
     "@niftysave/router": "^0.1.0",
     "@niftysave/vinyl": "^0.1.0",
-    "multiformats": "^6.0.1",
-    "nft.storage": "^0.4.1"
+    "multiformats": "^9.0.1",
+    "nft.storage": "^1.4.0"
   },
   "repository": {
     "type": "git",

@@ -8,5 +8,9 @@
     "packages/vinyl",
     "packages/chainnft",
     "packages/scanner"
-  ]
+  ],
+  "scripts": {
+    "import-tokens": "yarn --cwd packages/scanner import-tokens",
+    "import-metadata": "yarn --cwd packages/scanner import-metadata"
+  }
 }

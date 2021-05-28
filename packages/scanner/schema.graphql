@@ -59,7 +59,8 @@ type TokenAsset {
 }
 
 type Metadata {
-  source: TokenAsset! @relation
+  source: TokenAsset! @relation @unique
+  cid: String!
 
   """
   Identifies the asset this token represents
@@ -228,10 +229,6 @@ input ERC721ImportTokenOwnerInput {
 }
 
 enum TokenAssetStatus {
-  Idle
-
-  FailedURIParse
-
   Queued
   Failed
   Succeeded
@@ -276,6 +273,11 @@ input TokenMetadataImportInput {
 
 input MetadataInput {
   """
+  CID for the metadata content.
+  """
+  cid: String!
+
+  """
   Identifies the asset this token represents
   """
   name: String!
@@ -291,7 +293,7 @@ input MetadataInput {
   # """
   # Additional assets that token linked to
   # """
-  assets: [ResourceInput!]
+  assets: [ResourceInput!]!
 }
 
 input ResourceInput {

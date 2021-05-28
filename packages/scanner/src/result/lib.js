@@ -28,3 +28,10 @@ export const value = result => {
     throw result.error
   }
 }
+
+/**
+ * @template X, T
+ * @param {Promise<T>} promise
+ * @returns {Promise<Result.Result<X, T>>}
+ */
+export const fromPromise = promise => promise.then(ok).catch(error)

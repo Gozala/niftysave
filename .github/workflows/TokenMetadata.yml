@@ -1,4 +1,4 @@
-name: ERC721
+name: Token Metadata
 
 on:
   schedule:
@@ -24,4 +24,5 @@ jobs:
           FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
           BATCH_SIZE: 100
           TIME_BUDGET: 1620
-        run: yarn import-tokens
+          IPFS_CLUSTER_KEY: ${{ secrets.IPFS_CLUSTER_KEY }}
+        run: yarn import-metadata

@@ -170,6 +170,7 @@ export interface Metadata {
   description: String
   /** The document's ID. */
   _id: ID
+  cid: String
   /** The document's timestamp. */
   _ts: Long
   __typename: 'Metadata'
@@ -258,8 +259,6 @@ export interface TokenContract {
 export type Boolean = boolean
 
 export enum TokenAssetStatus {
-  Idle = 'Idle',
-  FailedURIParse = 'FailedURIParse',
   Queued = 'Queued',
   Failed = 'Failed',
   Succeeded = 'Succeeded',
@@ -731,6 +730,7 @@ export interface MetadataRequest {
   description?: boolean | number
   /** The document's ID. */
   _id?: boolean | number
+  cid?: boolean | number
   /** The document's timestamp. */
   _ts?: boolean | number
   __typename?: boolean | number
@@ -1159,13 +1159,15 @@ export interface MutationRequest {
 }
 
 export interface MetadataInput {
+  /** CID for the metadata content. */
+  cid: String
   /** Identifies the asset this token represents */
   name: String
   /** Describes the asset this token represents */
   description: String
   /** A file representing the asset this token represents */
   image: ResourceInput
-  assets?: ResourceInput[] | null
+  assets: ResourceInput[]
 }
 
 export interface ResourceInput {
@@ -2196,6 +2198,7 @@ export interface MetadataPromiseChain {
   description: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
+  cid: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Promise<Long> }
 }
@@ -2223,6 +2226,7 @@ export interface MetadataObservableChain {
   description: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
   /** The document's ID. */
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
+  cid: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
   /** The document's timestamp. */
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
 }

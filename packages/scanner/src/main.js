@@ -1,10 +1,9 @@
-import * as Import from "./import.js"
 import dotenv from "dotenv"
-
-dotenv.config()
-
 export const main = async () => {
-  await Import.spawn({
+  const url = new URL(`./${process.argv[2]}.js`, import.meta.url)
+  dotenv.config()
+  const task = await import(url.href)
+  await task.spawn({
     batchSize: Number(process.env["BATCH_SIZE"] || 50),
     budget: Number(process.env["TIME_BUDGET"] || 30) * 1000,
   })

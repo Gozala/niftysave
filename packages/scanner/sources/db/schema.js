@@ -22,8 +22,6 @@ export var ResourceStatus;
 })(ResourceStatus || (ResourceStatus = {}));
 export var TokenAssetStatus;
 (function (TokenAssetStatus) {
-    TokenAssetStatus["Idle"] = "Idle";
-    TokenAssetStatus["FailedURIParse"] = "FailedURIParse";
     TokenAssetStatus["Queued"] = "Queued";
     TokenAssetStatus["Failed"] = "Failed";
     TokenAssetStatus["Succeeded"] = "Succeeded";
