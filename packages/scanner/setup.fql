@@ -496,7 +496,7 @@ Call("overrideFunction", {
         collection: Collection("Resource"),
         data: {
           uri: Select("uri", Var("input")),
-          cid: Select("cid", Var("input"), null),
+          ipfsURL: Select("ipfsURL", Var("input"), null),
           status: "Idle"
         }
       })

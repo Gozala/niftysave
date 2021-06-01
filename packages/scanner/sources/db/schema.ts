@@ -200,6 +200,8 @@ export interface Resource {
    * pinned.
    */
   cid: String | null
+  /** ipfs:// url if `uri` was referring to gateway URL. */
+  ipfsURL: String | null
   status: ResourceStatus
   referrers: MetadataPage
   /** The document's timestamp. */
@@ -762,6 +764,8 @@ export interface ResourceRequest {
    * pinned.
    */
   cid?: boolean | number
+  /** ipfs:// url if `uri` was referring to gateway URL. */
+  ipfsURL?: boolean | number
   status?: boolean | number
   referrers?:
     | [
@@ -1172,7 +1176,7 @@ export interface MetadataInput {
 
 export interface ResourceInput {
   uri: String
-  cid?: String | null
+  ipfsURL?: String | null
 }
 
 /** 'Task' input values */
@@ -2264,6 +2268,8 @@ export interface ResourcePromiseChain {
    * pinned.
    */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+  /** ipfs:// url if `uri` was referring to gateway URL. */
+  ipfsURL: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
   status: { execute: (request?: boolean | number, defaultValue?: ResourceStatus) => Promise<ResourceStatus> }
   referrers: ((args?: {
     /** The number of items to return per page. */
@@ -2293,6 +2299,8 @@ export interface ResourceObservableChain {
    * pinned.
    */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
+  /** ipfs:// url if `uri` was referring to gateway URL. */
+  ipfsURL: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
   status: { execute: (request?: boolean | number, defaultValue?: ResourceStatus) => Observable<ResourceStatus> }
   referrers: ((args?: {
     /** The number of items to return per page. */

@@ -122,10 +122,14 @@ type Resource {
   URI with which resource was identified.
   """
   uri: String! @unique @index
+
   """
-  CID that corresponds to this resource. It may be set when
-  URL is parsed or it may be set when content is fetched and
-  pinned.
+  ipfs:// url if `uri` was referring to gateway URL.
+  """
+  ipfsURL: String @index
+
+  """
+  CID that corresponds to this resource, set once resourec is pinned.
   """
   cid: String @index
 
@@ -298,7 +302,7 @@ input MetadataInput {
 
 input ResourceInput {
   uri: String!
-  cid: String
+  ipfsURL: String
 }
 
 type Mutation {

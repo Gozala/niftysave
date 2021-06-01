@@ -2,7 +2,6 @@ import { db } from "./sources.js"
 import { mutate, query } from "./graphql.js"
 import * as Result from "./result/lib.js"
 import fetch from "@web-std/fetch"
-import { CID } from "multiformats"
 import * as Schema from "../sources/db/schema.js"
 import * as IPFSURL from "./ipfs-url.js"
 import * as Cluster from "./cluster.js"
@@ -234,13 +233,16 @@ const parseERC721Metadata = async content => {
  */
 const parseResource = input => {
   const url = new URL(input)
-  if (url.protocol === "ipfs") {
+  const ipfsURL = IPFSURL.asIPFSURL(url)
+  if (ipfsURL) {
     return {
       uri: input,
-      cid: parseCIDFromIPFSURL(url).toString(),
+      ipfsURL: ipfsURL.href,
     }
   } else {
-    return { uri: input }
+    return {
+      uri: input,
+    }
   }
 }
 
@@ -255,15 +257,6 @@ const tryParseResource = input => {
   } catch (error) {
     return null
   }
-}
-
-/**
- * @param {URL} url
- */
-
-const parseCIDFromIPFSURL = url => {
-  const [_root, _ipfs, cid] = url.pathname.split("/")
-  return CID.parse(cid || "")
 }
 
 /**

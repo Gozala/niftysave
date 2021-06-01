@@ -1001,6 +1001,11 @@ type Resource {
   pinned.
   """
   cid: String
+
+  """
+  ipfs:// url if `uri` was referring to gateway URL.
+  """
+  ipfsURL: String
   status: ResourceStatus!
   referrers(
     """
@@ -1022,7 +1027,7 @@ type Resource {
 
 input ResourceInput {
   uri: String!
-  cid: String
+  ipfsURL: String
 }
 
 """
