@@ -3,6 +3,7 @@ import fetch, { Blob } from "@web-std/fetch"
 import { File } from "@web-std/file"
 import { FormData } from "@web-std/form-data"
 import { Cluster } from "@nftstorage/ipfs-cluster"
+import * as IPFSURL from "./ipfs-url.js"
 
 dotenv.config()
 
@@ -40,11 +41,11 @@ export const add = async (data, metadata) => {
  * Adds blob to the cluster
  *
  * @template {Record<string, string>} T
- * @param {string} cid
+ * @param {IPFSURL.IPFSURL} url
  * @param {T} [metadata]
  */
-export const pin = async (cid, metadata) =>
-  cluster.pin(cid, {
+export const pin = async (url, metadata) =>
+  cluster.pin(IPFSURL.formatIPFSPath(url), {
     metadata: {
       user: "@nftstorage/niftysave",
       ...metadata,

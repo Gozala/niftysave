@@ -91,9 +91,12 @@ const processTokenAsset = async asset => {
     return await reportTokenAssetProblem(asset, "Has no tokenURI")
   }
   const url = urlResult.value
+  const ipfsURL = IPFSURL.asIPFSURL(url)
 
   console.log(`📡 (${_id}) Fetching content`)
-  const fetchResult = await Result.fromPromise(fetchResource(url))
+  const fetchResult = await Result.fromPromise(
+    ipfsURL ? fetchIPFSResource(ipfsURL) : fetchWebResource(url)
+  )
 
   if (!fetchResult.ok) {
     console.error(
@@ -122,15 +125,15 @@ const processTokenAsset = async asset => {
   }
   const metadata = parseResult.value
 
-  console.log(`📍 (${_id}) Pin metadata in IPFS`)
-  const pinOptions = {
-    assetID: _id,
-    ...(url.protocol !== "data:" && { sourceURL: url.href }),
-  }
+  console.log(
+    `📍 (${_id}) Pin metadata in IPFS ${ipfsURL || fetchResult.value}`
+  )
 
-  const pinResult = IPFSURL.isIPFSURL(url)
-    ? await Result.fromPromise(Cluster.pin(IPFSURL.cid(url), pinOptions))
-    : await Result.fromPromise(Cluster.add(fetchResult.value))
+  const pinResult = await pin(ipfsURL || fetchResult.value, {
+    assetID: _id,
+    // if it is a data uri just omit it.
+    ...(url.protocol !== "data:" && { sourceURL: tokenURI }),
+  })
 
   if (!pinResult.ok) {
     console.error(
@@ -139,7 +142,7 @@ const processTokenAsset = async asset => {
     return await reportTokenAssetProblem(asset, "failed to pin")
   }
   const { cid } = pinResult.value
-  console.log(`📌 Pinned matadata ${cid}`)
+  console.log(`📌 (${_id}) Pinned matadata ${cid}`)
   metadata.cid = cid
 
   console.log(`📝 (${_id}) Recording metadata into db`)
@@ -175,11 +178,9 @@ const parseURI = uri => {
  * @returns {Promise<Blob>}
  */
 
-const fetchResource = async resourceURL => {
-  const url = IPFSURL.isIPFSURL(resourceURL)
-    ? IPFSURL.embed(resourceURL)
-    : resourceURL
-  const response = await fetch(url.href)
+const fetchWebResource = async resourceURL => {
+  const response = await fetch(resourceURL.href)
+
   if (response.ok) {
     return await response.blob()
   } else {
@@ -188,6 +189,11 @@ const fetchResource = async resourceURL => {
     )
   }
 }
+
+/**
+ * @param {IPFSURL.IPFSURL} url
+ */
+const fetchIPFSResource = url => fetchWebResource(IPFSURL.embed(url))
 
 /**
  * @param {string} content
@@ -300,4 +306,17 @@ const reportTokenAssetProblem = async (asset, problem) => {
   })
 
   return Result.value(result).reportTokenAssetProblem._id
+}
+
+/**
+ * @param {IPFSURL.IPFSURL | Blob} source
+ * @param {Record<string, string>} metadata
+ */
+const pin = (source, metadata) => {
+  if (source instanceof URL) {
+    console.log("")
+    return Result.fromPromise(Cluster.pin(source, metadata))
+  } else {
+    return Result.fromPromise(Cluster.add(source))
+  }
 }
