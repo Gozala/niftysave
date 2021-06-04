@@ -129,7 +129,7 @@ type Resource {
   ipfsURL: String @index
 
   """
-  CID that corresponds to this resource, set once resourec is pinned.
+  CID that corresponds to this resource, set once resource is pinned.
   """
   cid: String @index
 
@@ -252,7 +252,7 @@ type Query {
 
   allImports: [ERC721ImportResult!] @relation
   """
-  Provides tokens with the
+  Finds tokens for the passed where clause.
   """
   findTokenAssets(where: FindTokenAssetsInput): [TokenAsset!]!
     @resolver(paginated: true)

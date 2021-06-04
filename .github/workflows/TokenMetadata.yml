@@ -5,7 +5,7 @@ on:
     - cron: "*/30 * * * *"
 
 jobs:
-  erc-7212:
+  erc-721:
     name: Scrape ERC-721
     runs-on: ubuntu-latest
     steps:
@@ -14,7 +14,7 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v1
         with:
-          node-version: 15
+          node-version: 16
 
       - name: Install dependencies
         run: yarn install

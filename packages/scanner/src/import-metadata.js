@@ -85,9 +85,9 @@ const processTokenAsset = async asset => {
   const urlResult = parseURI(tokenURI)
   if (!urlResult.ok) {
     console.error(
-      `🚨 (${_id}) Parseing URL failed ${urlResult.error}, report problem`
+      `🚨 (${_id}) Parsing URL failed ${urlResult.error}, report problem`
     )
-    return await reportTokenAssetProblem(asset, "Has no tokenURI")
+    return await reportTokenAssetProblem(asset, `Failed to parse tokenURI: ${urlResult.error}`)
   }
   const url = urlResult.value
   const ipfsURL = IPFSURL.asIPFSURL(url)
@@ -101,7 +101,7 @@ const processTokenAsset = async asset => {
     console.error(
       `🚨 (${_id}) Fetch failed ${fetchResult.error}, report problem`
     )
-    return await reportTokenAssetProblem(asset, "fail to fetch")
+    return await reportTokenAssetProblem(asset, `Failed to fetch: ${fetchResult.error}`)
   }
 
   console.log(`📑 (${_id}) Reading fetched content`)
@@ -109,7 +109,7 @@ const processTokenAsset = async asset => {
 
   if (!readResult.ok) {
     console.error(`🚨 (${_id}) Read failed ${readResult.error}, report problem`)
-    return await reportTokenAssetProblem(asset, "failed to read")
+    return await reportTokenAssetProblem(asset, `Failed to read: ${readResult.error}`)
   }
   const content = readResult.value
 
@@ -120,7 +120,7 @@ const processTokenAsset = async asset => {
     console.error(
       `🚨 (${_id}) Parse failed ${parseResult.error}, report problem`
     )
-    return await reportTokenAssetProblem(asset, "failed to parse as json")
+    return await reportTokenAssetProblem(asset, `Failed to parse as json: ${parseResult.error}`)
   }
   const metadata = parseResult.value
 
