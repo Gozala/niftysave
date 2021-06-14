@@ -1,3 +1,4 @@
+export * from "./result/lib.js"
 export type Result<X, T> = Failure<X> | Success<T>
 
 export interface Failure<X> {

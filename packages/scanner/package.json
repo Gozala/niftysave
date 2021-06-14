@@ -15,8 +15,8 @@
     "test": "mocha test/*.spec.js",
     "coverage": "c8 npm test && c8 report --reporter lcov --reporter html",
     "lint": "standard",
-    "generate-erc721-source": "generate-graphql-client --post --endpoint https://api.thegraph.com/subgraphs/name/nftstorage/eip721-subgraph --output ./sources/erc721 && cp template/* sources/erc721 && tsc ./sources/erc721/schema.ts --moduleResolution node --target esnext --esModuleInterop",
-    "generate-db-source": "generate-graphql-client --fetcher ./tools/fetcher.cjs --output ./sources/db && cp template/* sources/db && tsc ./sources/db/schema.ts --moduleResolution node --target esnext --esModuleInterop",
+    "generate-erc721-source": "generate-graphql-client --post --endpoint https://api.thegraph.com/subgraphs/name/nftstorage/eip721-subgraph --output ./gen/erc721 && cp template/* gen/erc721 && tsc ./gen/erc721/schema.ts --moduleResolution node --target esnext --esModuleInterop",
+    "generate-db-source": "generate-graphql-client --fetcher ./tools/fetcher.cjs --output ./gen/db && cp template/* gen/db && tsc ./gen/db/schema.ts --moduleResolution node --target esnext --esModuleInterop",
     "generate": "yarn generate-erc721-source && yarn generate-db-source"
   },
   "license": "(Apache-2.0 AND MIT)",

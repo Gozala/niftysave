@@ -2,11 +2,15 @@
 
 import fetch from "@web-std/fetch"
 import dotenv from "dotenv"
-import DB from "faunadb"
+import fauna from "faunadb"
 dotenv.config()
 
-globalThis.fetch = fetch
-globalThis.DB = DB
-globalThis.db = new DB.Client({
+const db = new fauna.Client({
   secret: process.env["FAUNA_KEY"] || "",
+})
+
+Object.assign(globalThis, {
+  fetch,
+  fauna,
+  db,
 })

@@ -1,6 +1,6 @@
 import { db, erc721 } from "./sources.js"
 import { mutate, query } from "./graphql.js"
-import * as Result from "./result/lib.js"
+import * as Result from "./result.js"
 
 /**
  * @param {Object} options
@@ -73,7 +73,7 @@ const readCursor = async () => {
  * @param {typeof db} db
  * @param {Object} input
  * @param {string} input.id
- * @param {import('../sources/erc721/schema').Token[]} input.tokens
+ * @param {import('../gen/erc721/schema').Token[]} input.tokens
  */
 const importTokens = async (db, input) => {
   const result = await mutate(db, {

@@ -1,7 +1,7 @@
 import { db } from "./sources.js"
 import { mutate, query } from "./graphql.js"
-import * as Result from "./result/lib.js"
-import * as Schema from "../sources/db/schema.js"
+import * as Result from "./result.js"
+import * as Schema from "../gen/db/schema.js"
 import * as IPFSURL from "./ipfs-url.js"
 import * as Cluster from "./cluster.js"
 import { fetchResource } from "./net.js"
@@ -230,7 +230,7 @@ const tryParseResource = input => {
  * @param {PropertyKey[]} [path]
  * @returns {Iterable<[string|number|boolean|null, PropertyKey[]]>}
  */
-const iterate = function*(data, path = []) {
+const iterate = function* (data, path = []) {
   if (Array.isArray(data)) {
     for (const [index, element] of data) {
       yield* iterate(element, [...path, index])

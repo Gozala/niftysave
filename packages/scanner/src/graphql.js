@@ -1,10 +1,10 @@
-import * as result from "./result/result.js"
+import * as Result from "./result.js"
 
 /**
  * @template QR, QC, Q, MR, MC, M, SR, SC, S
  * @param {{source: import("graphql-typed-client").Client<QR, QC, Q, MR, MC, M, SR, SC, S>}} endpoint
  * @param {QR} query
- * @returns {Promise<result.Result<Failure, Q>>}
+ * @returns {Promise<Result.Result<Failure, Q>>}
  */
 export const query = async ({ source }, query) =>
   asResult(await source.query(query))
@@ -13,7 +13,7 @@ export const query = async ({ source }, query) =>
  * @template QR, QC, Q, MR, MC, M, SR, SC, S
  * @param {{source: import("graphql-typed-client").Client<QR, QC, Q, MR, MC, M, SR, SC, S>}} endpoint
  * @param {MR} request
- * @returns {Promise<result.Result<Failure, M>>}
+ * @returns {Promise<Result.Result<Failure, M>>}
  */
 export const mutate = async ({ source }, request) =>
   asResult(await source.mutation(request))
@@ -21,14 +21,14 @@ export const mutate = async ({ source }, request) =>
 /**
  * @template T
  * @param {import('graphql').ExecutionResult<T>} input
- * @returns {result.Result<Failure, T>}
+ * @returns {Result.Result<Failure, T>}
  */
 
 const asResult = input => {
   if (input.data) {
-    return { ok: true, value: input.data }
+    return Result.ok(input.data)
   } else {
-    return { ok: false, error: new Failure(input.errors || []) }
+    return Result.error(new Failure(input.errors || []))
   }
 }
 
