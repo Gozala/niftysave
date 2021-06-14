@@ -1,36 +1,7 @@
-// Define a function that overrides existing function with a given name.
-// If function with that name does not exists it just defines a new one.
-// Useful for implementing graphql resolvers since fauna generates stubs
-// for those when schema is imported.
-CreateFunction({
-  name: "overrideFunction",
-  body: Query(
-    Lambda(
-      ["def"],
-      Let(
-        {
-          name: Select("name", Var("def"))
-        }, 
-        If(
-          IsFunction(Function(Var("name"))),
-          Do(
-            Update(
-              Function(Var("name")),
-              Var("def")
-            ),
-            Get(Function(Var("name")))
-          ),
-          CreateFunction(Var("def"))
-        )
-      )
-    )
-  )
-});
-
 // Define a function that either updates a (unique by a `key`) document in the
 // given `index`, or creates a new one if such document does not exists yet.
 // Useful when dealing with data that forms 1:n and n:m relationships.
-Call("overrideFunction", {
+CreateFunction({
   name: "createOrUpdate",
   body: Query(
     Lambda(
@@ -58,10 +29,9 @@ Call("overrideFunction", {
   )
 });
 
-
 // Implement `cursor` resolver function. Which can be called from graphql via
 // `query { cursor: { id } }`
-Call("overrideFunction", {
+CreateFunction({
   name: "cursor",
   body: Query(
     Lambda(
@@ -87,7 +57,7 @@ Call("overrideFunction", {
 
 // Function that updates the cursor and enforces 0 or 1 cursor document
 // invariant.
-Call("overrideFunction", {
+CreateFunction({
   name: "setCursor",
   body: Query(
     Lambda(
@@ -107,7 +77,7 @@ Call("overrideFunction", {
 });
 
 // Helper function adds or updates token owner to the DB.
-Call("overrideFunction", {
+CreateFunction({
   name: "importOwner",
   body: Query(
     Lambda(
@@ -123,7 +93,7 @@ Call("overrideFunction", {
 });
 
 // Helper function add or updates Eth block info to the DB.
-Call("overrideFunction", {
+CreateFunction({
   name: "importBlock",
   body: Query(
     Lambda(
@@ -142,7 +112,7 @@ Call("overrideFunction", {
 });
 
 // Helper function add or updates Token Contract info to the DB.
-Call("overrideFunction", {
+CreateFunction({
   name: "importTokenContract",
   body: Query(
     Lambda(
@@ -158,7 +128,7 @@ Call("overrideFunction", {
 });
 
 // Helper function adds or updates Token Asset info to the DB.
-Call("overrideFunction", {
+CreateFunction({
   name: "importTokenAsset",
   body: Query(
     Lambda(
@@ -175,7 +145,7 @@ Call("overrideFunction", {
 
 // Helper function that adds or updates Token to the DB. Update could happen
 // when token is transferred from one owner to the other.
-Call("overrideFunction", {
+CreateFunction({
   name: "importERC721Token",
   body: Query(
     Lambda(
@@ -243,7 +213,7 @@ Call("overrideFunction", {
 // into a DB. Import takes current cursor and a set of tokens to import, if
 // cursor has changed transaction is rejected otherwise performs atomic update
 // that adds / updates provided tokens.
-Call("overrideFunction", {
+CreateFunction({
   name: "importERC721",
   body: Query(
     Lambda(
@@ -322,43 +292,25 @@ Call("overrideFunction", {
 });
 
 
-// Utility function for clearing document collection, useful in interactive
-// sessions.
-Call("overrideFunction", {
-  name: 'clear',
-  body: Query(
-    Lambda(
-      ["name"],
-      Foreach(
-        Paginate(Documents(Collection(Var("name")))),
-        Lambda(["ref"], Delete(Var("ref")))
-      )
-    )
-  )
-});
-
-// Call("clear", "Cursor");
-// Call("clear", "Block");
-// Call("clear", "Token");
-// Call("clear", "ERC721ImportResult");
-// Call("clear", "Owner");
-// Call("clear", "TokenAsset");
-// Call("clear", "TokenContract");
-// Call("clear", "block_tokens");
-
-{
-  tokens: Count(Documents(Collection("Token"))),
-  imports: Count(Documents(Collection("ERC721ImportResult"))),
-  blocks: Count(Documents(Collection("Block"))),
-  assets: Count(Documents(Collection("TokenAsset"))),
-  contracts: Count(Documents(Collection("TokenContract"))),
-
-}
+// // Utility function for clearing document collection, useful in interactive
+// // sessions.
+// Call("overrideFunction", {
+//   name: 'clear',
+//   body: Query(
+//     Lambda(
+//       ["name"],
+//       Foreach(
+//         Paginate(Documents(Collection(Var("name")))),
+//         Lambda(["ref"], Delete(Var("ref")))
+//       )
+//     )
+//   )
+// });
 
 // This defines a `Paginate` function just like one in standard library, except
 // this one can take non static options. For more details see:
 // https://docs.fauna.com/fauna/current/api/graphql/functions?lang=javascript#paginated
-Call("overrideFunction", {
+CreateFunction({
   name: "paginate",
   body: Query(
     Lambda(
@@ -426,7 +378,7 @@ CreateIndex({
 //    after?: string
 //    before?: string
 // ) => TokenAsset[])
-Call("overrideFunction", {
+CreateFunction({
   name: 'findTokenAssets',
   body: Query(
     Lambda(
@@ -450,7 +402,7 @@ Call("overrideFunction", {
   )
 });
 
-Call("overrideFunction", {
+CreateFunction({
   name: "getTokenAssetByID",
   body: Query(
     Lambda(
@@ -461,7 +413,7 @@ Call("overrideFunction", {
 });
 
 // Returns status of the token asset.
-Call("overrideFunction", {
+CreateFunction({
   name: "tokenAssetStatus",
   body: Query(
     Lambda(
@@ -485,7 +437,7 @@ Call("overrideFunction", {
   )
 });
 
-Call("overrideFunction", {
+CreateFunction({
   name: "importResource",
   body: Query(
     Lambda(
@@ -516,7 +468,7 @@ Call("overrideFunction", {
 //   uri: string
 //   cid?: string
 // }
-Call("overrideFunction", {
+CreateFunction({
   name: "importTokenMetadata",
   body: Query(
     Lambda(
@@ -582,7 +534,7 @@ Call("overrideFunction", {
   )
 });
 
-Call("overrideFunction", {
+CreateFunction({
   name: "reportTokenAssetProblem",
   body: Query(
     Lambda(
@@ -607,6 +559,38 @@ Call("overrideFunction", {
             ),
             Var("tokenAsset")
           )
+        )
+      )
+    )
+  )
+});
+
+
+CreateIndex({
+  name: "resource_status",
+  source: Collection("Resource"),
+  terms: [{ field: ["data", "status"] }]
+});
+
+
+CreateFunction({
+  name: 'findResources',
+  body: Query(
+    Lambda(
+      ["where", "size", "after", "before"],
+      Let(
+        {
+          status: Select("status", Var("where")),
+          match: Match(Index("resource_status"), Var("status")),
+          refs: Call("paginate", Var("match"), {
+            size: Var("size"),
+            after: Var("after"),
+            before: Var("before")
+          })
+        },
+        Map(
+          Var("refs"),
+          Lambda("ref", Get(Var("ref")))
         )
       )
     )

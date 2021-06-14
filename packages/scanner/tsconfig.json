@@ -70,5 +70,11 @@
   },
   "exclude": [
     "template"
+  ],
+  "include": [
+    "src/**/*.js",
+    "**/*.ts",
+    "**/*.js",
+    ".repl.js"
   ]
 }

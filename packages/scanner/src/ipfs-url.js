@@ -67,7 +67,10 @@ const maybeFromGatewayDoman = ({ hostname, pathname, search, hash }) => {
  * }} options
  * @returns {IPFSURL}
  */
-export const create = (cid, { pathname = "/", hash = "", search = "" }) => {
+export const create = (
+  cid,
+  { pathname = "/", hash = "", search = "" } = {}
+) => {
   const url = Object.assign(new URL(`ipfs://${cid.toV1()}`), {
     pathname,
     search,

@@ -128,6 +128,12 @@ export const isTask = (obj) => {
         throw new Error('__typename is missing');
     return Task_possibleTypes.includes(obj.__typename);
 };
+const QueryFindResourcesPage_possibleTypes = ['QueryFindResourcesPage'];
+export const isQueryFindResourcesPage = (obj) => {
+    if (!obj.__typename)
+        throw new Error('__typename is missing');
+    return QueryFindResourcesPage_possibleTypes.includes(obj.__typename);
+};
 const Mutation_possibleTypes = ['Mutation'];
 export const isMutation = (obj) => {
     if (!obj.__typename)

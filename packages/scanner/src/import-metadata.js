@@ -1,10 +1,10 @@
 import { db } from "./sources.js"
 import { mutate, query } from "./graphql.js"
 import * as Result from "./result/lib.js"
-import fetch from "@web-std/fetch"
 import * as Schema from "../sources/db/schema.js"
 import * as IPFSURL from "./ipfs-url.js"
 import * as Cluster from "./cluster.js"
+import { fetchResource } from "./net.js"
 
 /**
  * @param {Object} options
@@ -82,7 +82,7 @@ const importTokenMetadata = async input => {
 const processTokenAsset = async asset => {
   const { _id, tokenURI } = asset
   console.log(`🔬 (${_id}) Parsing tokenURI`)
-  const urlResult = parseURI(tokenURI)
+  const urlResult = Result.fromTry(() => new URL(tokenURI))
   if (!urlResult.ok) {
     console.error(
       `🚨 (${_id}) Parsing URL failed ${urlResult.error}, report problem`
@@ -93,9 +93,7 @@ const processTokenAsset = async asset => {
   const ipfsURL = IPFSURL.asIPFSURL(url)
 
   console.log(`📡 (${_id}) Fetching content`)
-  const fetchResult = await Result.fromPromise(
-    ipfsURL ? fetchIPFSResource(ipfsURL) : fetchWebResource(url)
-  )
+  const fetchResult = await Result.fromPromise(fetchResource(ipfsURL || url))
 
   if (!fetchResult.ok) {
     console.error(
@@ -153,46 +151,15 @@ const processTokenAsset = async asset => {
   )
 
   if (!result.ok) {
-    console.error(`💣 (${_id}) Failed to store metadata ${result.error}`)
+    console.error(
+      `💣 (${_id}) Failed to store metadata ${result.error}`,
+      result.error
+    )
     return await reportTokenAssetProblem(asset, "failed to add metadata")
   }
 
   return result.value
 }
-
-/**
- *
- * @param {string} uri
- */
-const parseURI = uri => {
-  try {
-    return Result.ok(new URL(uri))
-  } catch (error) {
-    return Result.error(error)
-  }
-}
-
-/**
- * @param {URL} resourceURL
- * @returns {Promise<Blob>}
- */
-
-const fetchWebResource = async resourceURL => {
-  const response = await fetch(resourceURL.href)
-
-  if (response.ok) {
-    return await response.blob()
-  } else {
-    throw new Error(
-      `Fetch error: Status ${response.status} ${response.statusText}`
-    )
-  }
-}
-
-/**
- * @param {IPFSURL.IPFSURL} url
- */
-const fetchIPFSResource = url => fetchWebResource(IPFSURL.embed(url))
 
 /**
  * @param {string} content
@@ -218,7 +185,7 @@ const parseERC721Metadata = async content => {
   /** @type {Schema.MetadataInput} */
   const metadata = { cid: "", name, description, image: imageResource, assets }
   for (const [value] of iterate({ ...metadata, image: null })) {
-    const asset = typeof value === "string" && tryParseResource(value)
+    const asset = typeof value === "string" ? tryParseResource(value) : null
     if (asset) {
       assets.push(asset)
     }
@@ -249,7 +216,6 @@ const parseResource = input => {
 /**
  *
  * @param {string} input
- * @returns
  */
 const tryParseResource = input => {
   try {

@@ -11,6 +11,7 @@
     "repl": "node --experimental-repl-await -i -e 'import(`./.repl.js`)'",
     "import-tokens": "node ./src/main.js import-tokens",
     "import-metadata": "node ./src/main.js import-metadata",
+    "import-asset": "node ./src/main.js import-asset",
     "test": "mocha test/*.spec.js",
     "coverage": "c8 npm test && c8 report --reporter lcov --reporter html",
     "lint": "standard",

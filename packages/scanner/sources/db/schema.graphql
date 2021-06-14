@@ -260,6 +260,10 @@ input ERC721MetadataQuery {
   ipnft: String
 }
 
+input FindResourceInput {
+  status: ResourceStatus
+}
+
 input FindTokenAssetsInput {
   status: TokenAssetStatus
 }
@@ -566,6 +570,7 @@ type Mutation {
     """
     id: ID!
   ): Cursor
+  reportResourceProblem(input: ResourceProblemInput): Resource!
   importERC721(input: ERC721ImportInput!): ERC721ImportResult!
 
   """
@@ -732,6 +737,7 @@ type Mutation {
     """
     data: ResourceInput!
   ): Resource
+  updateResourcePin(input: ResorcePinInput): Resource!
 
   """
   Delete an existing document in the collection of 'Metadata'
@@ -922,6 +928,18 @@ type Query {
     """
     id: ID!
   ): Cursor
+  findResources(
+    """
+    The number of items to return per page.
+    """
+    _size: Int
+
+    """
+    The pagination cursor.
+    """
+    _cursor: String
+    where: FindResourceInput
+  ): QueryFindResourcesPage!
 
   """
   Find a document from the collection of 'TokenAsset' by its id.
@@ -960,6 +978,26 @@ type Query {
 }
 
 """
+The pagination object for elements of type 'Resource'.
+"""
+type QueryFindResourcesPage {
+  """
+  The elements of type 'Resource' in this page.
+  """
+  data: [Resource]!
+
+  """
+  A cursor for elements coming after the current page.
+  """
+  after: String
+
+  """
+  A cursor for elements coming before the current page.
+  """
+  before: String
+}
+
+"""
 The pagination object for elements of type 'TokenAsset'.
 """
 type QueryFindTokenAssetsPage {
@@ -979,6 +1017,13 @@ type QueryFindTokenAssetsPage {
   before: String
 }
 
+input ResorcePinInput {
+  resourceID: ID!
+  status: ResourceStatus!
+  ipfsURL: String!
+  cid: String!
+}
+
 type Resource {
   """
   Problem description if there was problem in pinning a resource.
@@ -996,9 +1041,7 @@ type Resource {
   uri: String!
 
   """
-  CID that corresponds to this resource. It may be set when
-  URL is parsed or it may be set when content is fetched and
-  pinned.
+  CID that corresponds to this resource, set once resourec is pinned.
   """
   cid: String
 
@@ -1048,6 +1091,12 @@ type ResourcePage {
   A cursor for elements coming before the current page.
   """
   before: String
+}
+
+input ResourceProblemInput {
+  resourceID: ID!
+  status: ResourceStatus!
+  problem: String!
 }
 
 input ResourceQuery {

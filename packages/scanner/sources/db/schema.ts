@@ -25,6 +25,7 @@ export interface Query {
   block: Block | null
   /** Find a document from the collection of 'Cursor' by its id. */
   findCursorByID: Cursor | null
+  findResources: QueryFindResourcesPage
   /** Find a document from the collection of 'TokenAsset' by its id. */
   findTokenAssetByID: TokenAsset | null
   tokens: TokenPage
@@ -194,11 +195,7 @@ export interface Resource {
   _id: ID
   /** URI with which resource was identified. */
   uri: String
-  /**
-   * CID that corresponds to this resource. It may be set when
-   * URL is parsed or it may be set when content is fetched and
-   * pinned.
-   */
+  /** CID that corresponds to this resource, set once resourec is pinned. */
   cid: String | null
   /** ipfs:// url if `uri` was referring to gateway URL. */
   ipfsURL: String | null
@@ -322,6 +319,17 @@ export interface Task {
 
 export type Time = any
 
+/** The pagination object for elements of type 'Resource'. */
+export interface QueryFindResourcesPage {
+  /** The elements of type 'Resource' in this page. */
+  data: (Resource | null)[]
+  /** A cursor for elements coming after the current page. */
+  after: String | null
+  /** A cursor for elements coming before the current page. */
+  before: String | null
+  __typename: 'QueryFindResourcesPage'
+}
+
 export interface Mutation {
   /** Delete an existing document in the collection of 'Owner' */
   deleteOwner: Owner | null
@@ -355,6 +363,7 @@ export interface Mutation {
   createToken: Token
   /** Delete an existing document in the collection of 'Cursor' */
   deleteCursor: Cursor | null
+  reportResourceProblem: Resource
   importERC721: ERC721ImportResult
   /** Update an existing document in the collection of 'TokenContract' */
   updateTokenContract: TokenContract | null
@@ -384,6 +393,7 @@ export interface Mutation {
   createOwner: Owner
   /** Update an existing document in the collection of 'Resource' */
   updateResource: Resource | null
+  updateResourcePin: Resource
   /** Delete an existing document in the collection of 'Metadata' */
   deleteMetadata: Metadata | null
   /** Update an existing document in the collection of 'Block' */
@@ -502,6 +512,18 @@ export interface QueryRequest {
     },
     CursorRequest,
   ]
+  findResources?:
+    | [
+        {
+          /** The number of items to return per page. */
+          _size?: Int | null
+          /** The pagination cursor. */
+          _cursor?: String | null
+          where?: FindResourceInput | null
+        },
+        QueryFindResourcesPageRequest,
+      ]
+    | QueryFindResourcesPageRequest
   /** Find a document from the collection of 'TokenAsset' by its id. */
   findTokenAssetByID?: [
     {
@@ -758,11 +780,7 @@ export interface ResourceRequest {
   _id?: boolean | number
   /** URI with which resource was identified. */
   uri?: boolean | number
-  /**
-   * CID that corresponds to this resource. It may be set when
-   * URL is parsed or it may be set when content is fetched and
-   * pinned.
-   */
+  /** CID that corresponds to this resource, set once resourec is pinned. */
   cid?: boolean | number
   /** ipfs:// url if `uri` was referring to gateway URL. */
   ipfsURL?: boolean | number
@@ -879,6 +897,22 @@ export interface TaskRequest {
   start?: boolean | number
   /** The document's timestamp. */
   _ts?: boolean | number
+  __typename?: boolean | number
+  __scalar?: boolean | number
+}
+
+export interface FindResourceInput {
+  status?: ResourceStatus | null
+}
+
+/** The pagination object for elements of type 'Resource'. */
+export interface QueryFindResourcesPageRequest {
+  /** The elements of type 'Resource' in this page. */
+  data?: ResourceRequest
+  /** A cursor for elements coming after the current page. */
+  after?: boolean | number
+  /** A cursor for elements coming before the current page. */
+  before?: boolean | number
   __typename?: boolean | number
   __scalar?: boolean | number
 }
@@ -1000,6 +1034,7 @@ export interface MutationRequest {
     },
     CursorRequest,
   ]
+  reportResourceProblem?: [{ input?: ResourceProblemInput | null }, ResourceRequest] | ResourceRequest
   importERC721?: [{ input: ERC721ImportInput }, ERC721ImportResultRequest]
   /** Update an existing document in the collection of 'TokenContract' */
   updateTokenContract?: [
@@ -1123,6 +1158,7 @@ export interface MutationRequest {
     },
     ResourceRequest,
   ]
+  updateResourcePin?: [{ input?: ResorcePinInput | null }, ResourceRequest] | ResourceRequest
   /** Delete an existing document in the collection of 'Metadata' */
   deleteMetadata?: [
     {
@@ -1372,6 +1408,12 @@ export interface CursorInput {
   id: String
 }
 
+export interface ResourceProblemInput {
+  resourceID: ID
+  status: ResourceStatus
+  problem: String
+}
+
 export interface ERC721ImportInput {
   /**
    * Cursor from which import started. If current cursor changed import will be
@@ -1402,6 +1444,13 @@ export interface ERC721ImportTokenContractInput {
 
 export interface ERC721ImportTokenOwnerInput {
   id: ID
+}
+
+export interface ResorcePinInput {
+  resourceID: ID
+  status: ResourceStatus
+  ipfsURL: String
+  cid: String
 }
 
 export interface TokenAssetProblemInput {
@@ -1569,6 +1618,12 @@ export const isTask = (obj: { __typename: String }): obj is Task => {
   return Task_possibleTypes.includes(obj.__typename)
 }
 
+const QueryFindResourcesPage_possibleTypes = ['QueryFindResourcesPage']
+export const isQueryFindResourcesPage = (obj: { __typename: String }): obj is QueryFindResourcesPage => {
+  if (!obj.__typename) throw new Error('__typename is missing')
+  return QueryFindResourcesPage_possibleTypes.includes(obj.__typename)
+}
+
 const Mutation_possibleTypes = ['Mutation']
 export const isMutation = (obj: { __typename: String }): obj is Mutation => {
   if (!obj.__typename) throw new Error('__typename is missing')
@@ -1682,6 +1737,24 @@ export interface QueryPromiseChain {
     /** The 'Cursor' document's ID */
     id: ID
   }) => CursorPromiseChain & { execute: (request: CursorRequest, defaultValue?: Cursor | null) => Promise<Cursor | null> }
+  findResources: ((args?: {
+    /** The number of items to return per page. */
+    _size?: Int | null
+    /** The pagination cursor. */
+    _cursor?: String | null
+    where?: FindResourceInput | null
+  }) => QueryFindResourcesPagePromiseChain & {
+    execute: (
+      request: QueryFindResourcesPageRequest,
+      defaultValue?: QueryFindResourcesPage,
+    ) => Promise<QueryFindResourcesPage>
+  }) &
+    (QueryFindResourcesPagePromiseChain & {
+      execute: (
+        request: QueryFindResourcesPageRequest,
+        defaultValue?: QueryFindResourcesPage,
+      ) => Promise<QueryFindResourcesPage>
+    })
   /** Find a document from the collection of 'TokenAsset' by its id. */
   findTokenAssetByID: (args: {
     /** The 'TokenAsset' document's ID */
@@ -1822,6 +1895,24 @@ export interface QueryObservableChain {
   }) => CursorObservableChain & {
     execute: (request: CursorRequest, defaultValue?: Cursor | null) => Observable<Cursor | null>
   }
+  findResources: ((args?: {
+    /** The number of items to return per page. */
+    _size?: Int | null
+    /** The pagination cursor. */
+    _cursor?: String | null
+    where?: FindResourceInput | null
+  }) => QueryFindResourcesPageObservableChain & {
+    execute: (
+      request: QueryFindResourcesPageRequest,
+      defaultValue?: QueryFindResourcesPage,
+    ) => Observable<QueryFindResourcesPage>
+  }) &
+    (QueryFindResourcesPageObservableChain & {
+      execute: (
+        request: QueryFindResourcesPageRequest,
+        defaultValue?: QueryFindResourcesPage,
+      ) => Observable<QueryFindResourcesPage>
+    })
   /** Find a document from the collection of 'TokenAsset' by its id. */
   findTokenAssetByID: (args: {
     /** The 'TokenAsset' document's ID */
@@ -2262,11 +2353,7 @@ export interface ResourcePromiseChain {
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Promise<ID> }
   /** URI with which resource was identified. */
   uri: { execute: (request?: boolean | number, defaultValue?: String) => Promise<String> }
-  /**
-   * CID that corresponds to this resource. It may be set when
-   * URL is parsed or it may be set when content is fetched and
-   * pinned.
-   */
+  /** CID that corresponds to this resource, set once resourec is pinned. */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
   /** ipfs:// url if `uri` was referring to gateway URL. */
   ipfsURL: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
@@ -2293,11 +2380,7 @@ export interface ResourceObservableChain {
   _id: { execute: (request?: boolean | number, defaultValue?: ID) => Observable<ID> }
   /** URI with which resource was identified. */
   uri: { execute: (request?: boolean | number, defaultValue?: String) => Observable<String> }
-  /**
-   * CID that corresponds to this resource. It may be set when
-   * URL is parsed or it may be set when content is fetched and
-   * pinned.
-   */
+  /** CID that corresponds to this resource, set once resourec is pinned. */
   cid: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
   /** ipfs:// url if `uri` was referring to gateway URL. */
   ipfsURL: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
@@ -2481,6 +2564,26 @@ export interface TaskObservableChain {
   _ts: { execute: (request?: boolean | number, defaultValue?: Long) => Observable<Long> }
 }
 
+/** The pagination object for elements of type 'Resource'. */
+export interface QueryFindResourcesPagePromiseChain {
+  /** The elements of type 'Resource' in this page. */
+  data: { execute: (request: ResourceRequest, defaultValue?: (Resource | null)[]) => Promise<(Resource | null)[]> }
+  /** A cursor for elements coming after the current page. */
+  after: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+  /** A cursor for elements coming before the current page. */
+  before: { execute: (request?: boolean | number, defaultValue?: String | null) => Promise<String | null> }
+}
+
+/** The pagination object for elements of type 'Resource'. */
+export interface QueryFindResourcesPageObservableChain {
+  /** The elements of type 'Resource' in this page. */
+  data: { execute: (request: ResourceRequest, defaultValue?: (Resource | null)[]) => Observable<(Resource | null)[]> }
+  /** A cursor for elements coming after the current page. */
+  after: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
+  /** A cursor for elements coming before the current page. */
+  before: { execute: (request?: boolean | number, defaultValue?: String | null) => Observable<String | null> }
+}
+
 export interface MutationPromiseChain {
   /** Delete an existing document in the collection of 'Owner' */
   deleteOwner: (args: {
@@ -2573,6 +2676,10 @@ export interface MutationPromiseChain {
     /** The 'Cursor' document's ID */
     id: ID
   }) => CursorPromiseChain & { execute: (request: CursorRequest, defaultValue?: Cursor | null) => Promise<Cursor | null> }
+  reportResourceProblem: ((args?: {
+    input?: ResourceProblemInput | null
+  }) => ResourcePromiseChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Promise<Resource> }) &
+    (ResourcePromiseChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Promise<Resource> })
   importERC721: (args: {
     input: ERC721ImportInput
   }) => ERC721ImportResultPromiseChain & {
@@ -2670,6 +2777,10 @@ export interface MutationPromiseChain {
   }) => ResourcePromiseChain & {
     execute: (request: ResourceRequest, defaultValue?: Resource | null) => Promise<Resource | null>
   }
+  updateResourcePin: ((args?: {
+    input?: ResorcePinInput | null
+  }) => ResourcePromiseChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Promise<Resource> }) &
+    (ResourcePromiseChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Promise<Resource> })
   /** Delete an existing document in the collection of 'Metadata' */
   deleteMetadata: (args: {
     /** The 'Metadata' document's ID */
@@ -2806,6 +2917,10 @@ export interface MutationObservableChain {
   }) => CursorObservableChain & {
     execute: (request: CursorRequest, defaultValue?: Cursor | null) => Observable<Cursor | null>
   }
+  reportResourceProblem: ((args?: {
+    input?: ResourceProblemInput | null
+  }) => ResourceObservableChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Observable<Resource> }) &
+    (ResourceObservableChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Observable<Resource> })
   importERC721: (args: {
     input: ERC721ImportInput
   }) => ERC721ImportResultObservableChain & {
@@ -2905,6 +3020,10 @@ export interface MutationObservableChain {
   }) => ResourceObservableChain & {
     execute: (request: ResourceRequest, defaultValue?: Resource | null) => Observable<Resource | null>
   }
+  updateResourcePin: ((args?: {
+    input?: ResorcePinInput | null
+  }) => ResourceObservableChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Observable<Resource> }) &
+    (ResourceObservableChain & { execute: (request: ResourceRequest, defaultValue?: Resource) => Observable<Resource> })
   /** Delete an existing document in the collection of 'Metadata' */
   deleteMetadata: (args: {
     /** The 'Metadata' document's ID */

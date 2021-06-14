@@ -41,6 +41,6 @@ export class Failure extends Error {
     this.errors = errors
   }
   get message() {
-    return this.errors.map(String).join("\n")
+    return this.errors.map(error => error.message).join("\n")
   }
 }
