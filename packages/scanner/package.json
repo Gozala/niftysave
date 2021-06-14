@@ -5,6 +5,9 @@
   "main": "./src/main.js",
   "type": "module",
   "scripts": {
+    "fauna-schema-migrate": "fauna-schema-migrate generate && fauna-schema-migrate apply",
+    "import-db": "node ./tools/import-db.js",
+    "update-graphql-schema": "node ./tools/updage-graphql-schema.js",
     "repl": "node --experimental-repl-await -i -e 'import(`./.repl.js`)'",
     "import-tokens": "node ./src/main.js import-tokens",
     "import-metadata": "node ./src/main.js import-metadata",
@@ -23,7 +26,10 @@
     "c8": "^7.7.1",
     "graphql-tag-pluck": "0.8.7",
     "mocha": "^8.3.2",
-    "standard": "^16.0.3"
+    "standard": "^16.0.3",
+    "fauna-schema-migrate": "^2.1.2",
+    "yargs": "^17.0.1",
+    "@types/yargs": "^17.0.0"
   },
   "standard": {
     "ignore": [
