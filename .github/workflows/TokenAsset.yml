@@ -1,0 +1,28 @@
+name: Token Asset
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+
+jobs:
+  erc-721:
+    name: Scrape ERC-721
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup node
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Run job
+        env:
+          FAUNA_KEY: ${{ secrets.FAUNA_KEY }}
+          BATCH_SIZE: 100
+          TIME_BUDGET: 1620
+          IPFS_CLUSTER_KEY: ${{ secrets.IPFS_CLUSTER_KEY }}
+        run: yarn import-asset

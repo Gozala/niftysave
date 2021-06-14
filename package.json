@@ -11,6 +11,7 @@
   ],
   "scripts": {
     "import-tokens": "yarn --cwd packages/scanner import-tokens",
-    "import-metadata": "yarn --cwd packages/scanner import-metadata"
+    "import-metadata": "yarn --cwd packages/scanner import-metadata",
+    "import-asset": "yarn --cwd packages/scanner import-asset"
   }
 }
