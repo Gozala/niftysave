@@ -347,3 +347,95 @@ type Mutation {
   reportResourceProblem(input: ResourceProblemInput): Resource! @resolver
   updateResourcePin(input: ResorcePinInput): Resource! @resolver
 }
+
+# -------------- Schema from kv -------------------------
+
+type Upload {
+  cid: String!
+
+  """
+  How it was uploaded into the nft.storage
+  """
+  type: String!
+
+  # """
+  # Additional assets that token linked to
+  # """
+  assets: [Resource!] @relation
+
+  files: [File!]! @embedded
+
+  """
+  Pinning service pin metadata.
+  """
+  pin: Pin @embedded
+
+  """
+  Token name
+  """
+  scope: String!
+
+  created: Time!
+
+  dagSize: Int!
+
+  pinStatus: PinStatus!
+
+  deals: [Deals!]!
+}
+
+# type Deals {
+#   nft: NFT @relation
+#   # We will derive dealStatus from here via index.
+#   deals: [Deal!]! @embedded
+# }
+
+type Deal {
+  nft: NFT @relation @index
+
+  lastChangedUnix: Time!
+  pieceCID: String!
+  status: DealStatus!
+}
+
+enum DealStatus {
+  Proposing
+  Accepted
+  Failed
+  Published
+  Active
+  Terminated
+}
+
+type File {
+  name: String!
+  type: String!
+}
+
+type Pin {
+  name: String!
+  """
+  This JSON
+  """
+  meta: String!
+}
+
+enum PinStatus {
+  UNDEFINED
+  CLUSTER_ERROR
+  PIN_ERROR
+  UNPIN_ERROR
+  PINNED
+  PINNING
+  UNPINNED
+  REMOTE
+  PIN_QUEUED
+  UNPIN_QUEUED
+  SHARDED
+}
+
+
+type User {
+  email: String!
+  uploads: Upload[]!
+}
