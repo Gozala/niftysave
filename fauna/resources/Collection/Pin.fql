@@ -1,0 +1,1 @@
+CreateCollection({"name": "Pin", "data": {"gql": {"ts": Time("2021-06-17T08:08:35.000656Z"), "meta": {"name": "Pin", "fields": [{"name": "name", "type": {"NotNull": {"Named": "String"}}}, {"name": "meta", "description": "This JSON", "type": {"NotNull": {"Named": "String"}}}], "directives": [{"name": "collection", "args": {"name": "Pin"}}]}}}, "history_days": 30})
