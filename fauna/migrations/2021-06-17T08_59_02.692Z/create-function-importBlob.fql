@@ -1,0 +1,33 @@
+CreateFunction({
+  "name": "importBlob",
+  "body": Query(Lambda("_", Abort("Function importBlob was not implemented yet. Please access your database and provide an implementation for the importBlob function."))),
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "location": "Mutation",
+        "field": {
+          "name": "importBlob",
+          "directives": [{
+            "name": "resolver",
+            "args": {
+              "name": "importBlob",
+              "paginated": false
+            }
+          }],
+          "type": {
+            "NotNull": {
+              "Named": "Upload"
+            }
+          },
+          "arguments": [{
+            "name": "input",
+            "type": {
+              "Named": "ImportBlobInput"
+            }
+          }]
+        }
+      }
+    }
+  }
+})

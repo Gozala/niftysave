@@ -1,0 +1,32 @@
+CreateFunction({
+  "name": "importIPNFT",
+  "body": Query(Lambda("_", Abort("Function importIPNFT was not implemented yet. Please access your database and provide an implementation for the importIPNFT function."))),
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "location": "Mutation",
+        "field": {
+          "name": "importIPNFT",
+          "directives": [{
+            "name": "resolver",
+            "args": {
+              "name": "importIPNFT",
+              "paginated": false
+            }
+          }],
+          "description": "API endpoint that corresponds to `/store` API of nft.storage.",
+          "type": {
+            "Named": "Upload"
+          },
+          "arguments": [{
+            "name": "input",
+            "type": {
+              "Named": "ImportIPNFTInput"
+            }
+          }]
+        }
+      }
+    }
+  }
+})

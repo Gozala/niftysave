@@ -1,0 +1,33 @@
+CreateFunction({
+  "name": "importDirectory",
+  "body": Query(Lambda("_", Abort("Function importDirectory was not implemented yet. Please access your database and provide an implementation for the importDirectory function."))),
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "location": "Mutation",
+        "field": {
+          "name": "importDirectory",
+          "directives": [{
+            "name": "resolver",
+            "args": {
+              "name": "importDirectory",
+              "paginated": false
+            }
+          }],
+          "type": {
+            "NotNull": {
+              "Named": "Upload"
+            }
+          },
+          "arguments": [{
+            "name": "input",
+            "type": {
+              "Named": "ImportDirectoryInput"
+            }
+          }]
+        }
+      }
+    }
+  }
+})

@@ -1,0 +1,91 @@
+CreateCollection({
+  "name": "User",
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "name": "User",
+        "fields": [{
+          "name": "sub",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "nickname",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "name",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "email",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "picture",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "issuer",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "publicAddress",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "github",
+          "type": {
+            "Named": "String"
+          }
+        }, {
+          "name": "keys",
+          "directives": [{
+            "name": "relation",
+            "args": {
+              "name": "userKey_user"
+            }
+          }],
+          "description": "User authentification keys.",
+          "type": {
+            "NotNull": {
+              "List": {
+                "NotNull": {
+                  "Named": "UserKey"
+                }
+              }
+            }
+          }
+        }],
+        "directives": [{
+          "name": "collection",
+          "args": {
+            "name": "User"
+          }
+        }]
+      }
+    }
+  },
+  "history_days": 30
+})

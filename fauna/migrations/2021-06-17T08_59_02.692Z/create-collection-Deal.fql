@@ -1,0 +1,54 @@
+CreateCollection({
+  "name": "Deal",
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "name": "Deal",
+        "fields": [{
+          "name": "upload",
+          "directives": [{
+            "name": "relation",
+            "args": {
+              "name": "deal_upload"
+            }
+          }, {
+            "name": "index",
+            "args": {}
+          }],
+          "type": {
+            "Named": "Upload"
+          }
+        }, {
+          "name": "lastChangedUnix",
+          "type": {
+            "NotNull": {
+              "Named": "Time"
+            }
+          }
+        }, {
+          "name": "pieceCID",
+          "type": {
+            "NotNull": {
+              "Named": "String"
+            }
+          }
+        }, {
+          "name": "status",
+          "type": {
+            "NotNull": {
+              "Named": "DealStatus"
+            }
+          }
+        }],
+        "directives": [{
+          "name": "collection",
+          "args": {
+            "name": "Deal"
+          }
+        }]
+      }
+    }
+  },
+  "history_days": 30
+})

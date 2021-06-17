@@ -1,0 +1,16 @@
+CreateIndex({
+  "name": "upload_uploaders_by_userKey",
+  "source": Collection("upload_uploaders"),
+  "terms": [{
+    "field": ["data", "userKeyID"]
+  }],
+  "values": [{
+    "field": ["data", "uploadID"]
+  }],
+  "serialized": true,
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.565636Z")
+    }
+  }
+})

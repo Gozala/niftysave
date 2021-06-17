@@ -1,0 +1,16 @@
+CreateIndex({
+  "name": "resource_uploads_by_upload",
+  "source": Collection("resource_uploads"),
+  "terms": [{
+    "field": ["data", "uploadID"]
+  }],
+  "values": [{
+    "field": ["data", "resourceID"]
+  }],
+  "serialized": true,
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.565636Z")
+    }
+  }
+})
