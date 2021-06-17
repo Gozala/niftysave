@@ -33,8 +33,8 @@ type Token {
 TokenAsset represents contents of the tokenURI which may not have been found /
 pinned yet. It may have been added by the chain scraper, when token with this
 `tokenURI` was discovered. Alternatively it could have been created by an
-upload to nft.storage, in which case it may not have any refferers but it would have
-uploads.
+upload to nft.storage, in which case it may not have any refferers but it would
+have uploads.
 """
 type TokenAsset {
   """
@@ -91,13 +91,6 @@ type Metadata {
   Additional assets that token linked to
   """
   assets: [Resource!] @relation
-
-
-  """
-  Links to the nft.storage uploads (with metadata) this was part of. It may not
-  be part of any upload if it was discovered in the chain instead.
-  """
-  upload: [Upload!] @relation
 }
 
 enum ResourceStatus {
@@ -135,6 +128,7 @@ enum ResourceStatus {
 
 type Resource {
   referrers: [Metadata!] @relation
+  uploads: [Upload!] @relation
   status: ResourceStatus! @index
 
   """
@@ -365,14 +359,21 @@ type Mutation {
 
   reportResourceProblem(input: ResourceProblemInput): Resource! @resolver
   updateResourcePin(input: ResorcePinInput): Resource! @resolver
+
+  importBlob(input: ImportBlobInput): Upload! @resolver
+  importDirectory(input: ImportDirectoryInput): Upload! @resolver
+  """
+  API endpoint that corresponds to `/store` API of nft.storage.
+  """
+  importIPNFT(input: ImportIPNFTInput): Upload @resolver
 }
 
 # -------------- Schema from kv -------------------------
 
 enum UploadMethod {
-  Blob,
-  Car,
-  Directory,
+  Blob
+  Car
+  Directory
   IPNFT
 }
 
@@ -380,7 +381,7 @@ enum UploadMethod {
 # may be different e.g. created, scope.
 type Upload {
   cid: String!
-  users: [User!] @relation
+  uploaders: [UserKey!] @relation
 
   """
   How it was uploaded to nft.storage as in which API endpoint.
@@ -393,7 +394,6 @@ type Upload {
   imports.
   """
   contentType: String!
-
 
   """
   If method was 'IPNFT' then we have a `metadata` field otherwise it is going to
@@ -411,25 +411,14 @@ type Upload {
   """
   pin: Pin @embedded
 
-  """
-  Token name
-  """
-  scope: String!
-
   created: Time!
 
   dagSize: Int!
 
   pinStatus: PinStatus!
 
-  deals: [Deals!]!
+  deals: [Deal!]!
 }
-
-# type Deals {
-#   nft: NFT @relation
-#   # We will derive dealStatus from here via index.
-#   deals: [Deal!]! @embedded
-# }
 
 type Deal {
   upload: Upload @relation @index
@@ -447,7 +436,6 @@ enum DealStatus {
   Active
   Terminated
 }
-
 
 type Pin {
   name: String!
@@ -471,8 +459,118 @@ enum PinStatus {
   SHARDED
 }
 
-
-type User {
+input UserInput {
   email: String!
-  uploads: Upload[]!
+}
+
+input ImportDirectoryInput {
+  cid: String!
+  created: Time!
+  auth: UserAuthInput!
+  dagSize: Int!
+  files: [ImportDirectoryFileInput!]!
+}
+
+input ImportDirectoryFileInput {
+  name: String!
+  contentType: String!
+  cid: String!
+}
+
+input ImportBlobInput {
+  cid: String!
+  contentType: String!
+  created: Time!
+  auth: UserAuthInput!
+  dagSize: Int!
+}
+
+input ImportCarInput {
+  cid: String!
+  created: Time!
+  auth: UserAuthInput!
+  dagSize: Int!
+}
+
+input ImportIPNFTInput {
+  metadata: MetadataInput!
+  """
+  CID of the dag node encapsulating  NFT metadata and it's assets.
+  """
+  ipnft: String!
+  """
+  URI to the metadata.json. If omitted defaults to
+  `ipfs://${ipnft}/metadata.json`
+  """
+  tokenURI: String
+
+  """
+  Token name.
+  """
+  #  Not sure about this one, we do have it in kv so we retain it here as well.
+  # We should probably make it part of metadata instead though.
+  scope: String!
+
+  """
+  Timestamp of when upload happened.
+  """
+  created: Time!
+
+  # We have it in kv, I'm not sure why but we retain it here.
+  dagSize: Int!
+
+  """
+  Used to find a corresponding user and associate an upload with it.
+  """
+  auth: UserAuthInput!
+
+  # TODO:
+  # 1. Do we need to include deals here ? I think no.
+  # 2. Do we want to include pin here ? I don't think so.
+}
+
+"""
+Represents users key.
+"""
+input UserAuthInput {
+  secret: String!
+}
+
+# # From https://github.com/ipfs-shipyard/nft.storage/blob/c7e5130022ac1d0db13269582bdfa5e60d41bdea/packages/api/src/bindings.d.ts#L82-L92
+type User {
+  sub: String!
+  nickname: String!
+  name: String!
+  email: String!
+  picture: String!
+  issuer: String!
+  publicAddress: String!
+  github: String
+
+  """
+  User authentification keys.
+  """
+  keys: [UserKey!]! @relation
+}
+
+type UserKey {
+  """
+  User this key belongs to.
+  """
+  user: User! @relation
+
+  """
+  User assigned title.
+  """
+  title: String!
+
+  """
+  Uploads made using this user key.
+  """
+  uploads: [Upload]! @relation
+
+  """
+  Secret that corresponds to this key.
+  """
+  secret: String! @index
 }
