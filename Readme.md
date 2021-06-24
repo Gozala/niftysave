@@ -11,7 +11,7 @@ Cron job named `ERC721` runs periodically _(on github CI)_.
 It performs following steps until it runs out of time and then exits:
 
 1. Pull batch of tokens by querying [EIP721 Subgraph][].
-2. Import pulled batch into Fauna DB via `importERC721` GraphQL endpoint.
+2. Import pulled batchinto Fauna DB via `importERC721` GraphQL endpoint.
 
 Fauna does most of the heavy lifting here, specifically `importERC721` User Defined Function (UDF) does following:
 
@@ -24,7 +24,7 @@ Fauna does most of the heavy lifting here, specifically `importERC721` User Defi
 
 ### Analysis
 
-Cron job named `Token Metadata` runs runs periodically _(on github CI)_. It goes over tokens that were ingested and attempts to analyze token metadata assumed to be linked through `tokenURI`. It pulls batches of not yet analyzed tokens from the db via `findTokenAssets` GraphQL query and performs the following steps concurrently across all tokens:
+Cron job named `Token Metadata` runs runs periodically _(on github CI)_. It goes over tokens that were ingested and attempts to analyze token metadata assumed to be linked throug `tokenURI`. It pulls batch of not yet analyzed tokens from db via `findTokenAssets` GraphQL query and performs following steps concurrently across all tokens:
 
 1. Parse `token.tokenURI`, if failed just report an error.
 2. Fetch contents of URL (If it is `ipfs://` url or a IPFS gateway URL fetch from `https://ipfs.io/ipfs` otherwise from the actual URL). If failed report an error.
@@ -79,7 +79,7 @@ them and generate new one).
 
 GraphQL schema is defined at `./fauna/schema.graphql`. It is used to generate
 most collections and indexes in the DB. It necessary to enable GraphQL endpoint.
-Unfortunately [fauna-schema-migrate][] currently does not have GraphQL schema support.
+Unfortunately [fauna-schema-migrate][] currently does have GraphQL schema support.
 To work around this limitation, you can first apply GraphQL schema changes to the
 DB _(by running `yarn update-graphql-schema`)_ and then download schema changes
 from the DB by running `yarn import-db`.
@@ -93,13 +93,13 @@ from the DB by running `yarn import-db`.
 Code in the package assumes following environment variables which you can add to `./.env` file.
 
 - `FAUNA_KEY` - Your fauna db access token.
-- `IPFS_CLUSTER_KEY` - HTTP basic auth token for IPFS Cluster (base64 encoded).
+- `IPFS_CLUSTER_KEY` - Access token for IPFS cluster.
 - `BATCH_SIZE` - Number of tokens scanner will pull at a time.
 - `TIME_BUDGET` - Time budget in seconds (task will abort once out of time).
 
 ### Development
 
-Please do not change the schema or run untested code on a production database as you may corrupt data. Instead use a second (or your own) dev db instance. You should be
+Please do not chnage schema or run untested code on a production database as you may corrupt data. Instead use a second (or your own) dev db instance. You should be
 able to get new DB into a compatible shape by applying schema migrations.
 
 [fauna-schema-migrate]: https://github.com/fauna-labs/fauna-schema-migrate

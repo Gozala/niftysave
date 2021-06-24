@@ -1,12 +1,66 @@
 {
-  "name": "root",
-  "private": true,
-  "workspaces": [
-    "packages/followup",
-    "packages/router",
-    "packages/storproc",
-    "packages/vinyl",
-    "packages/chainnft",
-    "packages/scanner"
-  ]
+  "name": "niftysave",
+  "version": "0.0.0",
+  "description": "Job that scans chain for ERC-721 tokens",
+  "main": "./src/main.js",
+  "type": "module",
+  "scripts": {
+    "fauna-schema-migrate": "fauna-schema-migrate generate && fauna-schema-migrate apply",
+    "import-db": "node ./tools/import-db.js",
+    "update-graphql-schema": "node ./tools/updage-graphql-schema.js",
+    "repl": "node --experimental-repl-await -i -e 'import(`./.repl.js`)'",
+    "import-tokens": "node ./src/main.js import-tokens",
+    "import-metadata": "node ./src/main.js import-metadata",
+    "import-asset": "node ./src/main.js import-asset",
+    "test": "mocha test/*.spec.js",
+    "coverage": "c8 npm test && c8 report --reporter lcov --reporter html",
+    "lint": "standard",
+    "generate-erc721-source": "generate-graphql-client --post --endpoint https://api.thegraph.com/subgraphs/name/nftstorage/eip721-subgraph --output ./gen/erc721 && cp template/* gen/erc721 && tsc ./gen/erc721/schema.ts --moduleResolution node --target esnext --esModuleInterop",
+    "generate-db-source": "generate-graphql-client --fetcher ./tools/fetcher.cjs --output ./gen/db && cp template/* gen/db && tsc ./gen/db/schema.ts --moduleResolution node --target esnext --esModuleInterop",
+    "generate": "yarn generate-erc721-source && yarn generate-db-source"
+  },
+  "license": "(Apache-2.0 AND MIT)",
+  "devDependencies": {
+    "@types/assert": "^1.5.4",
+    "@types/mocha": "^8.2.2",
+    "assert": "^2.0.0",
+    "c8": "^7.7.1",
+    "graphql-tag-pluck": "0.8.7",
+    "mocha": "^8.3.2",
+    "standard": "^16.0.3",
+    "fauna-schema-migrate": "^2.1.2",
+    "yargs": "^17.0.1",
+    "@types/yargs": "^17.0.0",
+    "typescript": "^4.3.2"
+  },
+  "standard": {
+    "ignore": [
+      "*.ts"
+    ]
+  },
+  "dependencies": {
+    "@nftstorage/ipfs-cluster": "^3.0.1",
+    "@web-std/fetch": "^2.0.1",
+    "@web-std/file": "^1.1.0",
+    "@web-std/form-data": "^2.1.0",
+    "dotenv": "^10.0.0",
+    "faunadb": "^4.3.0",
+    "graphql-typed-client": "1.7.4",
+    "multiformats": "^9.0.1",
+    "nft.storage": "^1.4.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nftstorage/niftysave.git"
+  },
+  "keywords": [
+    "niftysave"
+  ],
+  "bugs": {
+    "url": "https://github.com/nftstorage/niftysave/issues"
+  },
+  "homepage": "https://github.com/nftstorage/niftysave#readme",
+  "publishConfig": {
+    "access": "public"
+  }
 }
