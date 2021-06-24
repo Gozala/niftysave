@@ -1,8 +1,8 @@
 name: Token Asset
 
-on:
-  schedule:
-    - cron: "*/30 * * * *"
+# on:
+#   schedule:
+#     - cron: "*/30 * * * *"
 
 jobs:
   erc-721:
