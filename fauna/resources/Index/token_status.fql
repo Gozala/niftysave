@@ -13,21 +13,17 @@ CreateIndex({
           Let(
             {
               problem: Select(["data", "problem"], Var("doc"), null),
-              metadata: Select(["data", "metadata"], Var("doc"), null)
+              metadata: Select(["data", "metadata"], Var("doc"), null),
             },
             If(
               Not(IsNull(Var("problem"))),
               "failed",
-              If(
-                Not(IsNull(Var("metadata"))),
-                "succeeded",
-                "queued"
-              )
+              If(Not(IsNull(Var("metadata"))), "succeeded", "queued")
             )
           )
         )
-      )
-    }
+      ),
+    },
   },
-  terms: [{ binding: "status" }]
-});
+  terms: [{ binding: "status" }],
+})

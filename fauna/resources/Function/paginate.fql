@@ -10,7 +10,7 @@ CreateFunction({
         {
           size: Select("size", Var("options")),
           after: Select("after", Var("options"), null),
-          before: Select("before", Var("options"), null)
+          before: Select("before", Var("options"), null),
         },
         If(
           Equals(Var("before"), null),
@@ -23,5 +23,5 @@ CreateFunction({
         )
       )
     )
-  )
+  ),
 })

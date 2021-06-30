@@ -7,7 +7,7 @@ CreateFunction({
       ["value"],
       Let(
         {
-          match: Documents(Collection("Cursor"))
+          match: Documents(Collection("Cursor")),
         },
         If(
           IsEmpty(Var("match")),
@@ -16,5 +16,5 @@ CreateFunction({
         )
       )
     )
-  )
-});
+  ),
+})

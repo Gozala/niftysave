@@ -7,7 +7,7 @@ CreateFunction({
       [],
       Let(
         {
-          match: Documents(Collection("Cursor"))
+          match: Documents(Collection("Cursor")),
         },
         If(
           // We either do not yet have cursor document or we have just one.
@@ -15,11 +15,11 @@ CreateFunction({
           // We just get the first match as we will only have one.
           IsEmpty(Var("match")),
           Create(Collection("Cursor"), {
-            data: { id: "" }
+            data: { id: "" },
           }),
           Get(Var("match"))
         )
       )
     )
-  )
-});
+  ),
+})

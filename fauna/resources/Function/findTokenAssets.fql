@@ -7,7 +7,7 @@
 //    before?: string
 // ) => TokenAsset[])
 CreateFunction({
-  name: 'findTokenAssets',
+  name: "findTokenAssets",
   body: Query(
     Lambda(
       ["where", "size", "after", "before"],
@@ -18,14 +18,11 @@ CreateFunction({
           refs: Call("paginate", Var("match"), {
             size: Var("size"),
             after: Var("after"),
-            before: Var("before")
-          })
+            before: Var("before"),
+          }),
         },
-        Map(
-          Var("refs"),
-          Lambda("ref", Get(Var("ref")))
-        )
+        Map(Var("refs"), Lambda("ref", Get(Var("ref"))))
       )
     )
-  )
-});
+  ),
+})

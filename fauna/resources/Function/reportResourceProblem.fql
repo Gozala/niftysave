@@ -5,17 +5,14 @@ CreateFunction({
       ["input"],
       Let(
         {
-          id: Select("resourceID", Var("input"))
+          id: Select("resourceID", Var("input")),
         },
-        Update(
-          Ref(Collection("Resource"), Var("id")),
-          {
-            data: {
-              status: Select("status", Var("input")),
-              problem: Select("problem", Var("input"))
-            }
-          }
-        )
+        Update(Ref(Collection("Resource"), Var("id")), {
+          data: {
+            status: Select("status", Var("input")),
+            problem: Select("problem", Var("input")),
+          },
+        })
       )
     )
   ),
@@ -29,27 +26,27 @@ CreateFunction({
           directives: [
             {
               name: "resolver",
-              "args": {
-                "name": "reportResourceProblem",
-                "paginated": false
-              }
-            }
+              args: {
+                name: "reportResourceProblem",
+                paginated: false,
+              },
+            },
           ],
-          "type": {
-            "NotNull": {
-              "Named": "Resource"
-            }
+          type: {
+            NotNull: {
+              Named: "Resource",
+            },
           },
-          "arguments": [
+          arguments: [
             {
-              "name": "input",
-              "type": {
-                "Named": "ResourceProblemInput"
-              }
-            }
-          ]
-        }
-      }
-    }
-  }
+              name: "input",
+              type: {
+                Named: "ResourceProblemInput",
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
 })

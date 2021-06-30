@@ -5,7 +5,10 @@ CreateFunction({
       ["input"],
       Let(
         {
-          tokenAsset: Call("getTokenAssetByID", Select("tokenAssetID", Var("input"))),
+          tokenAsset: Call(
+            "getTokenAssetByID",
+            Select("tokenAssetID", Var("input"))
+          ),
           status: Call("tokenAssetStatus", Var("tokenAsset")),
         },
         If(
@@ -13,18 +16,15 @@ CreateFunction({
           Equals(Var("status"), "Succeeded"),
           Abort("Aborting, because TokenAsset already has metadata"),
           Do(
-            Update(
-              Select("ref", Var("tokenAsset")),
-              {
-                data: {
-                  problem: Select("problem", Var("input"))
-                }
-              }
-            ),
+            Update(Select("ref", Var("tokenAsset")), {
+              data: {
+                problem: Select("problem", Var("input")),
+              },
+            }),
             Var("tokenAsset")
           )
         )
       )
     )
-  )
-});
+  ),
+})

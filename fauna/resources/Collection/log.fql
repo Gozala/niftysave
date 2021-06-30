@@ -1,1 +1,1 @@
-CreateCollection({"name": "log", "history_days": 30})
+CreateCollection({ name: "log", history_days: 30 })

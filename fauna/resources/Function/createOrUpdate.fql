@@ -14,17 +14,14 @@ CreateFunction({
           data: Select("data", Var("input")),
 
           search: Select(Var("key"), Var("data")),
-          match: Match(Var("index"), Var("search"))
+          match: Match(Var("index"), Var("search")),
         },
         If(
           IsEmpty(Var("match")),
           Create(Var("collection"), Var("input")),
-          Update(
-            Select("ref", Get(Var("match"))),
-            Var("input")
-          )
+          Update(Select("ref", Get(Var("match"))), Var("input"))
         )
       )
     )
-  )
+  ),
 })
