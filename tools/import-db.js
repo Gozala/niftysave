@@ -2,6 +2,7 @@ import fauna from "faunadb"
 import fs from "fs"
 import dotenv from "dotenv"
 import yargs from "yargs"
+import prettier from "prettier"
 
 const {
   Client,
@@ -62,21 +63,21 @@ const importFrom = async ({ client, base, type, icon, overwrite }) => {
       ? [Indexes(), createIndex]
       : [Functions(), createFunction]
 
-  const pages = client.paginate(source).map(ref => Get(ref))
+  const pages = client.paginate(source).map((ref) => Get(ref))
   let ok = true
-  await pages.each(page => {
+  await pages.each((page) => {
     for (const doc of /** @type{any[]} */ (page)) {
       console.log(`${icon} Import ${type} ${doc.name}`)
 
       const promise = fs.promises
         .writeFile(
           new URL(`./${type}/${doc.name}.fql`, base),
-          Expr.toString(create(doc)),
+          prettier.format(Expr.toString(create(doc))),
           {
             flag: overwrite ? "w" : "wx",
           }
         )
-        .catch(error => {
+        .catch((error) => {
           ok = false
           console.error(`🚨 Failed to write ${type} ${doc.name} ${error}`)
         })
