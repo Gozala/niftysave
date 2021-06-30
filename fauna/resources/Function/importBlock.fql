@@ -10,9 +10,9 @@ CreateFunction({
         collection: Collection("Block"),
         data: {
           hash: Select("hash", Var("data")),
-          number: ToInteger(Select("number", Var("data")))
-        }
+          number: ToInteger(Select("number", Var("data"))),
+        },
       })
     )
-  )
-});
+  ),
+})

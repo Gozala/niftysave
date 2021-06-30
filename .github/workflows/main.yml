@@ -14,10 +14,20 @@ jobs:
         node-version: [15.x]
     steps:
       - uses: actions/checkout@v2
-      - name: Use Node.js ${{ matrix.node-version }}
+
+      - name: Setup node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-      - run: npm ci
-      - run: npm run build --if-present
-      - run: npm test --if-present
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build
+        run: npm run build --if-present
+
+      - name: Typecheck
+        uses: gozala/typescript-error-reporter-action@v1.0.8
+
+      - name: Test
+        run: npm test --if-present

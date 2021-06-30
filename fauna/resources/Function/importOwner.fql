@@ -8,8 +8,8 @@ CreateFunction({
         index: Index("unique_Owner_id"),
         key: "id",
         collection: Collection("Owner"),
-        data: Var("data")
+        data: Var("data"),
       })
     )
-  )
-});
+  ),
+})

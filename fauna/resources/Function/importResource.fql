@@ -10,9 +10,9 @@ CreateFunction({
         data: {
           uri: Select("uri", Var("input")),
           ipfsURL: Select("ipfsURL", Var("input"), null),
-          status: "Idle"
-        }
+          status: "Idle",
+        },
       })
     )
-  )
-});
+  ),
+})

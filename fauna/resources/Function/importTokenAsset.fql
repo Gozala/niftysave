@@ -8,8 +8,8 @@ CreateFunction({
         key: "tokenURI",
         index: Index("unique_TokenAsset_tokenURI"),
         collection: Collection("TokenAsset"),
-        data: Var("data")
+        data: Var("data"),
       })
     )
-  )
-});
+  ),
+})

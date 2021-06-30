@@ -11,11 +11,7 @@ CreateFunction({
           // subgraph provides `tokenURI: ""` when metadata extension is not
           // supported. Here we just turn that back to `null` so it's eaiser
           // to query.
-          tokenURI: If(
-            Equals(0, Length(Var("uri"))),
-            null,
-            Var("uri")
-          ),
+          tokenURI: If(Equals(0, Length(Var("uri"))), null, Var("uri")),
 
           tokenAsset: If(
             IsNull(Var("tokenURI")),
@@ -27,10 +23,13 @@ CreateFunction({
 
           block: Call("importBlock", {
             hash: Select("blockHash", Var("token")),
-            number: Select("blockNumber", Var("token"))
+            number: Select("blockNumber", Var("token")),
           }),
 
-          contract: Call("importTokenContract", Select("contract", Var("token"))),
+          contract: Call(
+            "importTokenContract",
+            Select("contract", Var("token"))
+          ),
           owner: Call("importOwner", Select("owner", Var("token"))),
 
           token: Call("createOrUpdate", {
@@ -46,19 +45,19 @@ CreateFunction({
 
               contract: Select("ref", Var("contract")),
               owner: Select("ref", Var("owner")),
-            }
-          })
+            },
+          }),
         },
         Do(
           Create(Collection("block_tokens"), {
             data: {
               tokenID: Select("ref", Var("token")),
-              blockID: Select("ref", Var("block"))
-            }
+              blockID: Select("ref", Var("block")),
+            },
           }),
           Var("token")
         )
       )
     )
-  )
-});
+  ),
+})

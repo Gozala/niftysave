@@ -18,10 +18,7 @@ CreateFunction({
         Abort(
           Format(
             "Import is rejected because input.id: '%s' missmatches current cursor: {id: '%s'}",
-            [
-              Select(["data", "id"], Call("cursor")),
-              Select("id", Var("input"))
-            ]
+            [Select(["data", "id"], Call("cursor")), Select("id", Var("input"))]
           )
         ),
         Let(
@@ -31,8 +28,8 @@ CreateFunction({
             import: Create(Collection("ERC721ImportResult"), {
               data: {
                 id: Var("id"),
-                nextID: null
-              }
+                nextID: null,
+              },
             }),
             result: Reduce(
               Lambda(
@@ -44,39 +41,36 @@ CreateFunction({
                       data: {
                         tokenID: Select("ref", Var("token")),
                         eRC721ImportResultID: Select("ref", Var("import")),
-                      }
-                    })
+                      },
+                    }),
                   },
                   {
                     id: Var("id"),
-                    nextID: Select(["data", "id"], Var("token"))
+                    nextID: Select(["data", "id"], Var("token")),
                   }
                 )
               ),
               {
                 id: Var("id"),
                 nextID: Var("id"),
-                tokens: []
+                tokens: [],
               },
               Var("tokens")
-            )
+            ),
           },
           Do(
             // Update cursor
-            Call('setCursor', {
+            Call("setCursor", {
               data: {
-                id: Select("nextID", Var("result"))
-              }
+                id: Select("nextID", Var("result")),
+              },
             }),
-            Update(
-              Select("ref", Var("import")),
-              {
-                data: Var("result")
-              }
-            )
+            Update(Select("ref", Var("import")), {
+              data: Var("result"),
+            })
           )
         )
       )
     )
-  )
-});
+  ),
+})

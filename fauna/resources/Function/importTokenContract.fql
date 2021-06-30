@@ -8,8 +8,8 @@ CreateFunction({
         key: "id",
         index: Index("unique_TokenContract_id"),
         collection: Collection("TokenContract"),
-        data: Var("data")
+        data: Var("data"),
       })
     )
-  )
-});
+  ),
+})
