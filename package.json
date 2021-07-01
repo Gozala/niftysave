@@ -5,6 +5,9 @@
   "main": "./src/main.js",
   "type": "module",
   "scripts": {
+    "setup": "node ./tools/setup.js",
+    "create-migration": "node ./tools/create-migration.js",
+    "update-schema": "node ./tools/update-schema.js",
     "type-check": "tsc --build",
     "fauna-schema-migrate": "fauna-schema-migrate generate && fauna-schema-migrate apply",
     "import-db": "node ./tools/import-db.js",
@@ -27,7 +30,7 @@
     "@types/yargs": "^17.0.0",
     "assert": "^2.0.0",
     "c8": "^7.7.1",
-    "fauna-schema-migrate": "^2.1.2",
+    "@fauna-labs/fauna-schema-migrate": "^2.1.2",
     "graphql-tag-pluck": "0.8.7",
     "husky": "6.0.0",
     "lint-staged": "11.0.0",
