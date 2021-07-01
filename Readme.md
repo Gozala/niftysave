@@ -51,56 +51,86 @@ Cron job named `Token Asset` runs periodically _(on github CI)_. It goes over di
 GraphQL API. Invariants are upheld through User Defined Functions (UDF)s which
 are exposed as custom mutations over GraphQL.
 
-### DB Schema & UDFs
+## Hacking
 
-Fauna schema and functions are organized under `./fauna/resources` directory.[fauna-schema-migrate][] is used to generate schema migrations (at `./fauna/migrations/*`) and/or apply those to a target database.
+> ⚠️ Please do not change schema or run untested code on a production database as
+> you may corrupt data. Instead configure your environment to use dev db instance.
 
-#### How to
+### Environment
 
-If you need to add new collection/index/function create a corresponding file in
-`./fauna/resources/*`, under `Collection/Index/Function` directory. File should
-be named same as a `collection/index/function` and have a `.fql` extension. E.g.
-function named `boom` would go into `./fauna/resources/Function/boom.fql`.
+You will need to setup environment with variables listed below.
 
-If you need to modify a function just edit the corresponding file.
-
-If need to modify an index **think again**, most likely you should create a new
-index instead.
-
-If you need to modify a collection, please do not.
-
-It is expected that pull request will contain generated files in `fauna/migrations`
-which you can do by running `fauna-schema-migrate generate`. Unless there is a
-good reason (if so please call it out in the PR summary) generate a single
-migration (if you have generated several during development you can just delete
-them and generate new one).
-
-### GraphQL
-
-GraphQL schema is defined at `./fauna/schema.graphql`. It is used to generate
-most collections and indexes in the DB. It necessary to enable GraphQL endpoint.
-Unfortunately [fauna-schema-migrate][] currently does have GraphQL schema support.
-To work around this limitation, you can first apply GraphQL schema changes to the
-DB _(by running `yarn update-graphql-schema`)_ and then download schema changes
-from the DB by running `yarn import-db`.
-
-> **Note:** import-db script generates a file in `./fauna/resources/` directory for each colection/index/function. By default it will not overwrite existing files, and script will exit with code `1` when conflicting files exist. This is to avoid accidentaly overwriting changes you may have made.
->
-> In cases where you just added new types above should be just fine. In more rare cases e.g. when you change GraphQL directives this may not be enough. In such case you will need to run `yarn import-db -- --overwrite` instead, but be aware that it **WILL OVERWRITE ALL** files in `./fauna/resources/` (becuse it just pull all defs from DB where no formatting or comments are retained). In these cases you would need to cherry-pick relevant changes and commit those in git.
-
-### Settings
-
-Code in the package assumes following environment variables which you can add to `./.env` file.
+> Recommended way is through `./.env` file.
 
 - `FAUNA_KEY` - Your fauna db access token.
 - `IPFS_CLUSTER_KEY` - Access token for IPFS cluster.
 - `BATCH_SIZE` - Number of tokens scanner will pull at a time.
 - `TIME_BUDGET` - Time budget in seconds (task will abort once out of time).
 
-### Development
+### Setting up new/test database
 
-Please do not chnage schema or run untested code on a production database as you may corrupt data. Instead use a second (or your own) dev db instance. You should be
-able to get new DB into a compatible shape by applying schema migrations.
+1. Create a new database at https://dashboard.fauna.com/
+2. Generate access token in database settings (under security tab) and assign it to `FAUNA_KEY` env varibale (in `./.env` file).
+3. Get db schema up to date by running `yarn setup`. It will apply all db migrations to get it up to date with a schema.
+
+### Schema
+
+Database schema is primarily driven by GraphQL which schema. To make changes to
+the schema edit `./fauna/resources/schema.graphql` file and then run `yarn update-schema` which will:
+
+1. Reflect schema changes in DB (⚠️ Remember to use dev db).
+2. Download and organize new database collections/indexes/functions at `./fauna/resources` directory.
+
+> Each collection/index/function is written in file under corresponding
+> directory with a same named and `.fql` extension. E.g. function named `boom`
+> would be located at `./fauna/resources/Function/boom.fql`.
+
+If you only wanted to change schema than only other thing you'd need to do is
+generate a migration by running `yarn create-migration` script. That would
+create a directory under `./fauna/migrations/` and will contain changes made.
+
+> Make sure to include generated migration with a pull request.
+
+### User Defined Functions (UDF)s
+
+As alluded to in above section, all the UDFs will be organized in
+`./fauna/resources/Function` directory. Each file containing single function
+with a name of the file.
+
+You can modify existing functions or create new ones, once done you will need to
+generate a migration by running `yarn create-migration` script.
+
+### Indexes
+
+Fauna does not really support changing indexes, if you find yourself in need to
+do that it is likely that you'd be better of create a new index instead.
+
+Creating new indexes just requires creating a corresponding file, e.g. index
+named `allTokens` would require creating `./fauna/resources/Index/allTokens.fql`
+file with a single `CreateIndex` expression.
+
+> Note: Often times @index graphql directive in the schema would do a trick.
+
+### Collections
+
+You would probably never need to modify or create new collection manually, as
+they are generated from GraphQL schema.
+
+### Preparing pull request
+
+Typically you would combine schema changes with function changes and possibly
+accompany them with new indexes. Best practice is to do these as follows:
+
+- Start with changing a schema. Anything but bugfix will require graphql
+  entrypoint query or mutation so it's a best place to start.
+- Push schema changes by running `yarn update-schema`. That would also pull all
+  new functions/collections/indexes into your repo.
+- Modify / create functions. Above step would bring some new functions and here
+  you'd modify them and maybe introduce some new functions to ficilitate reuse.
+- Create necessary indexes. Your new functions often would need indexes and
+  likely you'll create them as you write those functions.
+- Creating a migration by running `yarn create-migration`, which will generate a
+  directory in `./fauna/migrations` which needs to be included in pul request.
 
 [fauna-schema-migrate]: https://github.com/fauna-labs/fauna-schema-migrate
 [erc-721]: https://eips.ethereum.org/EIPS/eip-721
