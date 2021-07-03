@@ -145,7 +145,7 @@ export const readCurrentSchema = async () => {
  * @returns {Promise<URL>}
  */
 
-const resolveResourceURL = async (type, name) =>
+export const resolveResourceURL = async (type, name) =>
   new URL(`./${type}/${name}.fql`, await resourcesBase())
 
 /**
@@ -304,7 +304,7 @@ const createFunction = ({ name, body, data, role }) =>
  * @param {Fauna.CreateFunctionExpr} before
  * @param {Fauna.CreateFunctionExpr} after
  */
-const mergeFunctions = (before, after) => {
+export const mergeFunctions = (before, after) => {
   const { name, body } = before.toJSON().create_function.toJSON().object
   const { data, role } = after.toJSON().create_function.toJSON().object
   return createFunction({ name, body, data, role })
