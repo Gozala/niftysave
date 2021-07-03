@@ -428,6 +428,11 @@
     data-uri-to-buffer "^3.0.1"
     web-streams-polyfill "^3.0.2"
 
+"@web-std/file-url@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.yarnpkg.com/@web-std/file-url/-/file-url-1.0.1.tgz#41209ec581ee7c97b19222b5daf47f2992f6fdd8"
+  integrity sha512-EUwv2YteIegzUWmTDUGo9PVh04qxPx26/4vzy50OhBjsuUldf6h2CpdY27Lrdk4LbpZGjbn7Ryw+amMLRoHUCQ==
+
 "@web-std/file@1.0.1":
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/@web-std/file/-/file-1.0.1.tgz#75db92071574e893ad66bdc1d282db97a6dfb89d"
@@ -2940,6 +2945,14 @@ strip-json-comments@3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/strip-json-comments/-/strip-json-comments-3.1.1.tgz#31f1281b3832630434831c310c01cccda8cbe006"
   integrity sha512-6fPc+R4ihwqP6N/aIv2f1gMH8lOVtWQHoqC4yK6oSDVVocumAsfCqjkXnqiYMhmMwS/mEHLp7Vehlt3ql6lEig==
+
+subprogram@^1.1.0:
+  version "1.1.0"
+  resolved "https://registry.yarnpkg.com/subprogram/-/subprogram-1.1.0.tgz#33c4e6d9dcd3b5b12d9c687cbb1903c3648c2d61"
+  integrity sha512-96Ycsy/MfoPo8ayy48EhHf2quRzbLCIIeBF9i0kMHFptvz2hOEcRJFRzhaJZbnczgnlMO0yM1/YZiPeZOPsO8w==
+  dependencies:
+    "@web-std/file-url" "^1.0.1"
+    dotenv "^10.0.0"
 
 subscriptions-transport-ws@^0.9.16:
   version "0.9.19"
