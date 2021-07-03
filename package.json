@@ -5,7 +5,8 @@
   "main": "./src/main.js",
   "type": "module",
   "scripts": {
-    "setup": "node ./tools/setup.js",
+    "setup": "node node ./tools/apply-migrations.js",
+    "apply-migrations": "node ./tools/apply-migrations.js",
     "create-migration": "node ./tools/create-migration.js",
     "update-schema": "node ./tools/update-schema.js",
     "type-check": "tsc --build",
@@ -37,6 +38,7 @@
     "mocha": "^8.3.2",
     "prettier": "2.3.2",
     "typescript": "^4.3.4",
+    "subprogram": "^1.1.0",
     "yargs": "^17.0.1"
   },
   "lint-staged": {

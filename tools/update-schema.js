@@ -1,32 +1,13 @@
-import dotenv from "dotenv"
 import * as migration from "./migration.js"
-import yargs from "yargs"
-dotenv.config()
+import { script } from "subprogram"
+import readConfig from "./config.js"
+export const main = async () => await updateSchema(await readConfig())
 
-const main = async () => {
-  dotenv.config()
-  const config = await yargs(process.argv.slice(2))
-    .boolean("overwrite")
-    .options({
-      secret: {
-        default: process.env["FAUNA_KEY"],
-        description: "Fauna DB access token",
-        demandOption: true,
-      },
-    })
-    .parse()
-
-  if (!config.secret) {
-    console.error(`⛔️ Task requires FAUNA_KEY env variable.
-For local development you can use .env file in the repo root with content like:
-
-FAUNA_KEY=fn...nw
-
-Use an actual key obtained from https://dashboard.fauna.com/
-`)
-    process.exit(1)
-  }
-
+/**
+ *
+ * @param {migration.Config} config
+ */
+export const updateSchema = async (config) => {
   const pendingMigrations = await migration.unappliedMigrations(config)
   if (pendingMigrations.size > 0) {
     console.error(
@@ -42,12 +23,12 @@ You need to apply those migrations before you will be able to update schema.`
 
   console.log(`💾 Downloanding database collections, indexes, functions`)
   await Promise.all([
-    migration.importCollections(config, { ignore: true }),
-    migration.importIndexes(config, { ignore: true }),
-    migration.importFunctions(config, { ignore: true }),
+    migration.importCollections(config),
+    migration.importIndexes(config),
+    migration.importFunctions(config),
   ])
 
   console.log("🎉 Schema upload complete")
 }
 
-main()
+script({ ...import.meta, main })

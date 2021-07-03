@@ -6,8 +6,9 @@ import taskMigrate from "@fauna-labs/fauna-schema-migrate/dist/tasks/migrate.js"
 import taskApply from "@fauna-labs/fauna-schema-migrate/dist/tasks/apply.js"
 import * as files from "@fauna-labs/fauna-schema-migrate/dist/util/files.js"
 import { config } from "@fauna-labs/fauna-schema-migrate/dist/util/config.js"
+import { evalFQLCode as readFQL } from "@fauna-labs/fauna-schema-migrate/dist/fql/eval.js"
 import prettier from "prettier"
-import fauna from "faunadb"
+import * as Fauna from "./fauna.js"
 
 const tasks = {
   /** @type {typeof taskMigrate} */
@@ -106,10 +107,7 @@ export const resourcesBase = async () =>
 
 export const baseURL = () => new URL(`${process.cwd()}/`, import.meta.url)
 
-export const migrationsCollectionURL = async () => {
-  const name = await config.getMigrationCollection()
-  return new URL(`${name}.fql`, await resourcesBase())
-}
+export const migrationsCollectionName = () => config.getMigrationCollection()
 
 /**
  * Returns file URL for last migration or `null` if no migrations
@@ -140,42 +138,99 @@ export const readCurrentSchema = async () => {
 }
 
 /**
- * @param {Config} config
- * @param {{overwrite?:boolean, ignore?:boolean}} [options]
+ * @typedef {'Function'|'Collection'|'Index'} ResourceType
+ *
+ * @param {ResourceType} type
+ * @param {string} name
+ * @returns {Promise<URL>}
  */
-export const importCollections = async (config, options) =>
+
+export const resolveResourceURL = async (type, name) =>
+  new URL(`./${type}/${name}.fql`, await resourcesBase())
+
+/**
+ * @param {URL} url
+ * @returns {Promise<Fauna.Expr|null>}>
+ */
+export const readResource = async (url) => {
+  try {
+    return readFQL(await fs.promises.readFile(url, "utf-8"))
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null
+    } else {
+      throw error
+    }
+  }
+}
+
+/**
+ * @param {URL} url
+ * @returns {Fauna.Expr|null}>
+ */
+export const readResourceSync = (url) => {
+  try {
+    return readFQL(fs.readFileSync(url, "utf-8"))
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      return null
+    } else {
+      throw error
+    }
+  }
+}
+
+/**
+ * @param {URL} url
+ * @param {Fauna.Expr} exp
+ */
+export const writeResource = async (url, exp) =>
+  await fs.promises.writeFile(
+    url,
+    prettier.format(Fauna.Expr.toString(exp), {
+      parser: "babel",
+      semi: false,
+    })
+  )
+
+/**
+ * @param {Config} config
+ */
+export const importCollections = async (config) =>
   await importFrom(
     config,
-    fauna.Collections(),
+    Fauna.Collections(),
     createCollection,
-    new URL("./Collection/", await resourcesBase()),
-    options
+    (_previous, next) => next,
+    "Collection",
+    { ignore: new Set([await migrationsCollectionName()]) }
   )
 
 /**
  * @param {Config} config
- * @param {{overwrite?:boolean, ignore?:boolean}} [options]
  */
-export const importIndexes = async (config, options) =>
+export const importIndexes = async (config) =>
   await importFrom(
     config,
-    fauna.Indexes(),
+    Fauna.Indexes(),
     createIndex,
-    new URL("./Index/", await resourcesBase()),
-    options
+    // can not update indexes so merge is no-op
+    (previous, _next) => previous,
+    "Index"
   )
 
 /**
  * @param {Config} config
- * @param {{overwrite?:boolean, ignore?:boolean}} [options]
  */
-export const importFunctions = async (config, options) =>
+export const importFunctions = async (config) =>
   await importFrom(
     config,
-    fauna.Functions(),
+    Fauna.Functions(),
     createFunction,
-    new URL("./Function/", await resourcesBase()),
-    options
+    // if we update functions we will loose all the comments which is not
+    // worth it. Instead we just retain current version.
+    (previous, _next) => previous,
+    "Function"
   )
 
 /**
@@ -183,51 +238,47 @@ export const importFunctions = async (config, options) =>
  * `../fauna/resources/` witch a matching name. Unless `options.overwrite` is
  * `true` it will not overwrite existing files.
  *
+ * @template {Fauna.Expr} T
  * @param {Config} config
- * @param {fauna.Expr} source
- * @param {(param:any) => fauna.Expr} create
- * @param {URL} target
- * @param {{overwrite?:boolean, ignore?:boolean}} [options]
+ * @param {Fauna.Expr} source
+ * @param {(param:any) => T} create
+ * @param {(before:T, after:T) => T} merge
+ * @param {ResourceType} type
+ * @param {{ignore?:Set<string>}} [options]
  */
 const importFrom = (
   config,
   source,
   create,
-  target,
-  { overwrite = false, ignore = false } = {}
+  merge,
+  type,
+  { ignore = new Set() } = {}
 ) =>
   withConfig(config, async () => {
     const client = await clientGenerator.getClient()
-    const builtinURL = await migrationsCollectionURL()
+    const baseURL = await resourcesBase()
 
     /** @type {Promise<any>[]} */
     const promises = []
 
-    const pages = client.paginate(source).map((ref) => fauna.Get(ref))
+    const pages = client.paginate(source).map((ref) => Fauna.Get(ref))
     /** @type {string[]} */
     const failed = []
 
     await pages.each((page) => {
       for (const doc of /** @type{any[]} */ (page)) {
-        const url = new URL(`./${doc.name}.fql`, target)
-        if (url.href !== builtinURL.href) {
-          const promise = fs.promises
-            .writeFile(
-              url,
-              prettier.format(fauna.Expr.toString(create(doc)), {
-                parser: "babel",
-              }),
-              {
-                flag: overwrite ? "w" : "wx",
-              }
-            )
-            .catch(() => {
-              if (!ignore) {
-                failed.push(doc.name)
-              }
+        if (!ignore.has(doc.name)) {
+          const url = new URL(`./${type}/${doc.name}.fql`, baseURL)
+          const previous = /** @type {null|T} */ (readResourceSync(url))
+          const next = create(doc)
+          const current = previous != null ? merge(previous, next) : next
+          if (current != previous) {
+            const promise = writeResource(url, current).catch((_error) => {
+              failed.push(doc.name)
             })
 
-          promises.push(promise)
+            promises.push(promise)
+          }
         }
       }
     })
@@ -239,10 +290,10 @@ const importFrom = (
   })
 
 /**
- * @param {{name:string, body:Object, data?:Object, role?:Object }} input
+ * @param {Fauna.CreateFunctionParam} input
  */
 const createFunction = ({ name, body, data, role }) =>
-  fauna.CreateFunction({
+  Fauna.CreateFunction({
     name,
     body,
     ...(data && { data }),
@@ -250,7 +301,17 @@ const createFunction = ({ name, body, data, role }) =>
   })
 
 /**
- * @param {{name:string, data?:Object, history_days?:number, ttl_days?:number|null, permissions?:Object }} input
+ * @param {Fauna.CreateFunctionExpr} before
+ * @param {Fauna.CreateFunctionExpr} after
+ */
+export const mergeFunctions = (before, after) => {
+  const { name, body } = before.toJSON().create_function.toJSON().object
+  const { data, role } = after.toJSON().create_function.toJSON().object
+  return createFunction({ name, body, data, role })
+}
+
+/**
+ * @param {Fauna.CreateCollectionParam} input
  */
 const createCollection = ({
   name,
@@ -259,7 +320,7 @@ const createCollection = ({
   ttl_days,
   permissions,
 }) =>
-  fauna.CreateCollection({
+  Fauna.CreateCollection({
     name,
     ...(data !== undefined && { data }),
     ...(history_days !== undefined && { history_days }),
@@ -268,17 +329,7 @@ const createCollection = ({
   })
 
 /**
- *
- * @param {{
- *   name:string,
- *   source:Object,
- *   terms?:Object[],
- *   values?:Object[],
- *   unique?:boolean,
- *   serialized?:boolean,
- *   permissions?: Object,
- *   data?:Object
- * }} input
+ * @param {Fauna.CreateIndexParam} input
  * @returns
  */
 const createIndex = ({
@@ -291,7 +342,7 @@ const createIndex = ({
   permissions,
   data,
 }) =>
-  fauna.CreateIndex({
+  Fauna.CreateIndex({
     name,
     source,
     ...(terms && { terms }),
