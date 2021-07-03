@@ -1,0 +1,59 @@
+Update(Function("importBlob"), {
+  "body": Query(Lambda(["input"], Let([{
+    "secret": Select(["auth", "secret"], Var("input"))
+  }, {
+    "userKey": Match(Index("userKey_secret"), Var("secret"))
+  }, {
+    "cid": Select("cid", Var("input"))
+  }, {
+    "ipfsURL": Format("ipfs://%s", Var("cid"))
+  }, {
+    "resoruce": Call("createOrUpdate", {
+      "key": "uri",
+      "index": Index("unique_Resource_uri"),
+      "collection": Collection("Resource"),
+      "data": {
+        "uri": Var("ipfsURL"),
+        "ipfsURL": Var("ipfsURL"),
+        "cid": Var("cid"),
+        "status": "Pinned"
+      }
+    })
+  }, {
+    "upload": Create(Collection("Upload"), {
+      "data": {
+        "cid": Var("cid")
+      }
+    })
+  }], Abort("Function importBlob was not implemented yet. Please access your database and provide an implementation for the importBlob function.")))),
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "location": "Mutation",
+        "field": {
+          "name": "importBlob",
+          "directives": [{
+            "name": "resolver",
+            "args": {
+              "name": "importBlob",
+              "paginated": false
+            }
+          }],
+          "type": {
+            "NotNull": {
+              "Named": "Upload"
+            }
+          },
+          "arguments": [{
+            "name": "input",
+            "type": {
+              "Named": "ImportBlobInput"
+            }
+          }]
+        }
+      }
+    }
+  },
+  "role": null
+})

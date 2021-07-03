@@ -1,1 +1,102 @@
-CreateFunction({"name": "importBlob", "body": Query(Lambda("_", Abort("Function importBlob was not implemented yet. Please access your database and provide an implementation for the importBlob function."))), "data": {"gql": {"ts": Time("2021-06-17T08:08:35.000656Z"), "meta": {"location": "Mutation", "field": {"name": "importBlob", "directives": [{"name": "resolver", "args": {"name": "importBlob", "paginated": false}}], "type": {"NotNull": {"Named": "Upload"}}, "arguments": [{"name": "input", "type": {"Named": "ImportBlobInput"}}]}}}}})
+
+
+CreateFunction({
+  name: "importBlob",
+  body: Query(
+    Lambda(
+      ["input"],
+      Let(
+        {
+          userKey: Call("auth", Select("auth", Var("input"))),
+          cid: Select("cid", Var("input")),
+          // For blob upload ipfsURL is simply ipfs://${cid}
+          ipfsURL: Format("ipfs://%s", Var("cid")),
+          // It could be that we already have resource with this url einther
+          // because same file was uploaded already or maybe because it was
+          // discovered on chain and ingested. In that case we just get a
+          // resource otherwise we create one.
+          resoruce: Call("findeOrCreate", {
+            key: "uri",
+            index: Index("unique_Resource_uri"),
+            collection: Collection("Resource"),
+            data: {
+              uri: Var("ipfsURL"),
+              ipfsURL: Var("ipfsURL"),
+              cid: Var("cid"),
+              status: "PinQueued"
+            }
+          }),
+          // Every upload is unique, so we just create a new upload
+          // document
+          upload: Create(
+            Collection("Upload"),
+            {
+              data: {
+                cid: Var("cid"),
+                method: "Blob",
+                root: Select("ref", Var("resoruce")),
+                links: [],
+                contentType: Select("contentType", Var("input")),
+                created: Select("created", Var("input")),
+                dagSize: Select("dagSize", Var("input")),
+                deals: []
+              }
+            }
+          )
+        },
+        // Now that all the documents are in place we need to create relations
+        // among them.
+        Do(
+          // Associate resource with an upload
+          Create(Collection("resource_uploads"), {
+            data: {
+
+            }
+          }),
+          // Associate upload with a user key
+          Create(Collection("upload_uploaders"), {
+            data: {
+
+            }
+          }),
+
+          // Associate upload with a user key
+          Abort("Function importBlob was not implemented yet. Please access your database and provide an implementation for the importBlob function.")
+        )
+      )
+    )
+  ),
+  "data": {
+    "gql": {
+      "ts": Time("2021-06-17T08:08:35.000656Z"),
+      "meta": {
+        "location": "Mutation",
+        "field": {
+          "name": "importBlob",
+          "directives": [
+            {
+              "name": "resolver",
+              "args": {
+                "name": "importBlob",
+                "paginated": false
+              }
+            }
+          ],
+          "type": {
+            "NotNull": {
+              "Named": "Upload"
+            }
+          },
+          "arguments": [
+            {
+              "name": "input",
+              "type": {
+                "Named": "ImportBlobInput"
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+})

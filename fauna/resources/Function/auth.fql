@@ -1,0 +1,23 @@
+// Function takes UserAuthInput (as per schema.graphql) and
+// performs authentification, returning a correspnoding
+// `UserKey`.
+//
+// Current implementation does not actually perform any
+// authentification instead it either stores a new UserKey
+// returns existing one.
+CreateFunction({
+  name: "auth",
+  body: Query(
+    Lambda(
+      ["input"],
+      Call("findOrCreate", {
+        key: "secret",
+        index: Index("userKey_secret"),
+        collection: Collection("UserKey"),
+        data: {
+          secret: Select("secret", Var("input"))
+        }
+      })
+    )
+  )
+});
